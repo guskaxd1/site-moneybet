@@ -3,6 +3,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 const path = require('path');
 require('dotenv').config();
 const cors = require('cors');
+const session = require('express-session'); // Adicionado
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -31,13 +32,63 @@ async function connectDB() {
 
 let db;
 
-// Configurar CORS
+// Configurar middleware
 app.use(cors());
 app.use(express.static(path.join(__dirname, '.')));
 app.use(express.json());
 
-// Rota para a raiz (/) que serve o index.html
-app.get('/', (req, res) => {
+// Configurar sessões
+app.use(session({
+    secret: 'seu-segredo-aqui', // Substitua por um segredo seguro em produção
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false } // Em produção, use secure: true com HTTPS
+}));
+
+// Middleware para verificar autenticação
+const requireAuth = (req, res, next) => {
+    if (req.session.isAuthenticated) {
+        next();
+    } else {
+        res.redirect('/login.html');
+    }
+};
+
+// Usuário e senha fixos (para este exemplo básico)
+const ADMIN_CREDENTIALS = {
+    username: 'adm1',
+    password: 'Bueno00' // Substitua por uma senha segura
+};
+
+// Rota de login
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    console.log(`Tentativa de login: username=${username}`);
+
+    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+        req.session.isAuthenticated = true;
+        console.log('Login bem-sucedido');
+        res.json({ success: true, redirect: '/' });
+    } else {
+        console.log('Falha no login: credenciais inválidas');
+        res.status(401).json({ success: false, message: 'Usuário ou senha incorretos' });
+    }
+});
+
+// Rota de logout
+app.post('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            console.error('Erro ao fazer logout:', err);
+            return res.status(500).json({ success: false, message: 'Erro ao fazer logout' });
+        }
+        console.log('Logout bem-sucedido');
+        res.json({ success: true, redirect: '/login.html' });
+    });
+});
+
+// Rota para a raiz (/) que serve o index.html (protegida)
+app.get('/', requireAuth, (req, res) => {
     console.log('Rota / acessada');
     res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -48,8 +99,8 @@ app.get('/health', (req, res) => {
     res.json({ status: 'Servidor está rodando' });
 });
 
-// Rota para buscar todos os usuários
-app.get('/users', async (req, res) => {
+// Rota para buscar todos os usuários (protegida)
+app.get('/users', requireAuth, async (req, res) => {
     try {
         console.log('Rota /users acessada');
         if (!db) {
@@ -83,8 +134,8 @@ app.get('/users', async (req, res) => {
     }
 });
 
-// Rota para buscar dados de um único usuário
-app.get('/user/:userId', async (req, res) => {
+// Rota para buscar dados de um único usuário (protegida)
+app.get('/user/:userId', requireAuth, async (req, res) => {
     try {
         console.log(`Rota /user/${req.params.userId} acessada`);
         if (!db) {
@@ -106,8 +157,8 @@ app.get('/user/:userId', async (req, res) => {
     }
 });
 
-// Rota para atualizar saldo e data de expiração
-app.put('/user/:userId', async (req, res) => {
+// Rota para atualizar saldo e data de expiração (protegida)
+app.put('/user/:userId', requireAuth, async (req, res) => {
     try {
         console.log(`Rota PUT /user/${req.params.userId} acessada`);
         if (!db) {
