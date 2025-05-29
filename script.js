@@ -1,9 +1,23 @@
 document.addEventListener('DOMContentLoaded', () => {
-    fetch('https://site-moneybet.onrender.com/') // Substitua 'seu-app.onrender.com' pelo domínio real do Render
-        .then(response => response.json())
+    console.log('Iniciando fetch para carregar usuários...');
+    fetch('https://site-moneybet.onrender.com/users')
+        .then(response => {
+            console.log('Resposta recebida:', response);
+            if (!response.ok) {
+                throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(users => {
+            console.log('Dados recebidos:', users);
             const tableBody = document.getElementById('usersTableBody');
+            if (!users || users.length === 0) {
+                console.log('Nenhum usuário encontrado.');
+                tableBody.innerHTML = '<tr><td colspan="8">Nenhum usuário encontrado.</td></tr>';
+                return;
+            }
             users.forEach(user => {
+                console.log('Processando usuário:', user.userId);
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${user.userId}</td>
@@ -24,21 +38,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 tableBody.appendChild(row);
             });
         })
-        .catch(error => console.error('Erro ao carregar usuários:', error));
+        .catch(error => {
+            console.error('Erro ao carregar usuários:', error);
+            const tableBody = document.getElementById('usersTableBody');
+            tableBody.innerHTML = `<tr><td colspan="8">Erro ao carregar usuários: ${error.message}</td></tr>`;
+        });
 });
 
 function updateUser(userId) {
+    console.log(`Atualizando usuário ${userId}...`);
     const balance = document.getElementById(`balance-${userId}`).value;
     const expirationDate = document.getElementById(`expiration-${userId}`).value;
 
-    fetch(`https://site-moneybet.onrender.com//${userId}`, { // Substitua 'seu-app.onrender.com' pelo domínio real
+    fetch(`https://site-moneybet.onrender.com/user/${userId}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({ balance, expirationDate })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Resposta da atualização:', response);
+        if (!response.ok) {
+            throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.error) throw new Error(data.error);
         alert('Dados atualizados com sucesso!');
