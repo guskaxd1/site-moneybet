@@ -3,7 +3,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 const path = require('path');
 require('dotenv').config();
 const cors = require('cors');
-const session = require('express-session'); // Adicionado
+const session = require('express-session');
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -39,25 +39,27 @@ app.use(express.json());
 
 // Configurar sessões
 app.use(session({
-    secret: 'seu-segredo-aqui', // Substitua por um segredo seguro em produção
+    secret: 'seu-segredo-aqui',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false } // Em produção, use secure: true com HTTPS
+    cookie: { secure: false }
 }));
 
 // Middleware para verificar autenticação
 const requireAuth = (req, res, next) => {
+    console.log('Verificando autenticação:', req.session.isAuthenticated);
     if (req.session.isAuthenticated) {
         next();
     } else {
+        console.log('Não autenticado, redirecionando para /login.html');
         res.redirect('/login.html');
     }
 };
 
-// Usuário e senha fixos (para este exemplo básico)
+// Usuário e senha fixos
 const ADMIN_CREDENTIALS = {
     username: 'adm1',
-    password: 'Bueno00' // Substitua por uma senha segura
+    password: 'Bueno00'
 };
 
 // Rota de login

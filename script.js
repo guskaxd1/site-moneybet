@@ -1,8 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Iniciando fetch para carregar usuários...');
-    fetch('https://site-moneybet.onrender.com/users')
+    console.log('Verificando autenticação e iniciando fetch para carregar usuários...');
+
+    // Verificar se o usuário está autenticado
+    fetch('https://site-moneybet.onrender.com/health', { credentials: 'include' }) // Testa a sessão
         .then(response => {
-            console.log('Resposta recebida:', response);
+            if (response.status === 401 || response.redirected) {
+                console.log('Não autenticado, redirecionando para login');
+                window.location.href = '/login.html';
+                return;
+            }
+            return fetch('https://site-moneybet.onrender.com/users', { credentials: 'include' });
+        })
+        .then(response => {
+            console.log('Resposta recebida de /users:', response);
             if (!response.ok) {
                 throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
             }
@@ -55,7 +65,7 @@ function updateUser(userId) {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ balance, expirationDate })
+        credentials: 'include' // Enviar cookies de sessão
     })
     .then(response => {
         console.log('Resposta da atualização:', response);
@@ -71,5 +81,28 @@ function updateUser(userId) {
     .catch(error => {
         console.error('Erro ao atualizar dados:', error);
         alert('Erro ao atualizar dados: ' + error.message);
+    });
+}
+
+function handleLogout() {
+    console.log('Fazendo logout...');
+    fetch('/logout', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include' // Enviar cookies de sessão
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = data.redirect;
+        } else {
+            alert('Erro ao fazer logout: ' + (data.message || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro ao fazer logout:', error);
+        alert('Erro ao fazer logout: ' + error.message);
     });
 }
