@@ -1,5 +1,5 @@
 const express = require('express');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 const path = require('path');
 require('dotenv').config();
 
@@ -28,13 +28,17 @@ async function connectDB() {
 
 let db;
 
+// Configurar o Express para servir arquivos estáticos
 app.use(express.static(path.join(__dirname, '.')));
+
 app.use(express.json());
 
+// Rota para a raiz (/) que serve o index.html
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Rota para buscar todos os usuários
 app.get('/users', async (req, res) => {
     try {
         if (!db) db = await connectDB();
@@ -50,7 +54,7 @@ app.get('/users', async (req, res) => {
                 registeredAt: user.registeredAt,
                 paymentHistory: user.paymentHistory || [],
                 balance: balance.balance,
-                expirationDate: expiration.expirationDate,
+                expirationDate: expiration.expirationDate
             };
         }));
 
@@ -60,6 +64,7 @@ app.get('/users', async (req, res) => {
     }
 });
 
+// Rota para buscar dados de um único usuário
 app.get('/user/:userId', async (req, res) => {
     try {
         if (!db) db = await connectDB();
@@ -70,26 +75,29 @@ app.get('/user/:userId', async (req, res) => {
 
         res.json({
             balance: balance.balance,
-            expirationDate: expiration.expirationDate,
+            expirationDate: expiration.expirationDate
         });
     } catch (err) {
         res.status(500).json({ error: 'Erro ao buscar dados' });
     }
 });
 
+// Rota para atualizar saldo e data de expiração
 app.put('/user/:userId', async (req, res) => {
     try {
         if (!db) db = await connectDB();
         const userId = req.params.userId;
         const { balance, expirationDate } = req.body;
 
+        // Validar entrada
         if (balance !== undefined && (isNaN(balance) || balance < 0)) {
-            return res.status(500).json({ error: 'Saldo deve ser um número positivo' });
+            return res.status(400).json({ error: 'Saldo deve ser um número positivo' });
         }
         if (expirationDate && isNaN(Date.parse(expirationDate))) {
-            return res.status(500).json({ error: 'Data inválida' });
+            return res.status(400).json({ error: 'Data inválida' });
         }
 
+        // Atualizar saldo na coleção userBalances
         if (balance !== undefined) {
             await db.collection('userBalances').updateOne(
                 { userId: userId },
@@ -98,6 +106,7 @@ app.put('/user/:userId', async (req, res) => {
             );
         }
 
+        // Atualizar data de expiração na coleção expirationDates
         if (expirationDate) {
             await db.collection('expirationDates').updateOne(
                 { userId: userId },
