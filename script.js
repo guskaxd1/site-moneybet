@@ -31,7 +31,7 @@ function updateUser(userId) {
     const balance = document.getElementById(`balance-${userId}`).value;
     const expirationDate = document.getElementById(`expiration-${userId}`).value;
 
-    fetch(`https://seu-app.onrender.com/user/${userId}`, { // Substitua 'seu-app.onrender.com' pelo domínio real
+    fetch(`https://site-moneybet.onrender.com//${userId}`, { // Substitua 'seu-app.onrender.com' pelo domínio real
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json'
