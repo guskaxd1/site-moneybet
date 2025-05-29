@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    fetch('http://localhost:8080/users')
+    fetch('https://site-moneybet.onrender.com/') // Substitua 'seu-app.onrender.com' pelo domínio real do Render
         .then(response => response.json())
         .then(users => {
             const tableBody = document.getElementById('usersTableBody');
@@ -31,7 +31,7 @@ function updateUser(userId) {
     const balance = document.getElementById(`balance-${userId}`).value;
     const expirationDate = document.getElementById(`expiration-${userId}`).value;
 
-    fetch(`http://localhost:8080/user/${userId}`, {
+    fetch(`https://seu-app.onrender.com/user/${userId}`, { // Substitua 'seu-app.onrender.com' pelo domínio real
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json'

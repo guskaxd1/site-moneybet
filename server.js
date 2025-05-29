@@ -2,9 +2,10 @@ const express = require('express');
 const { MongoClient, ObjectId } = require('mongodb');
 const path = require('path');
 require('dotenv').config();
+const cors = require('cors'); // Adicionado
 
 const app = express();
-const port = 8080;
+const port = process.env.PORT || 8080; // Usa porta do ambiente ou 8080 como fallback
 
 const mongoUri = process.env.MONGO_URI;
 
@@ -28,9 +29,9 @@ async function connectDB() {
 
 let db;
 
-// Configurar o Express para servir arquivos estáticos
+// Configurar CORS
+app.use(cors()); // Permite requisições de qualquer origem (ajuste conforme necessário)
 app.use(express.static(path.join(__dirname, '.')));
-
 app.use(express.json());
 
 // Rota para a raiz (/) que serve o index.html
@@ -89,7 +90,6 @@ app.put('/user/:userId', async (req, res) => {
         const userId = req.params.userId;
         const { balance, expirationDate } = req.body;
 
-        // Validar entrada
         if (balance !== undefined && (isNaN(balance) || balance < 0)) {
             return res.status(400).json({ error: 'Saldo deve ser um número positivo' });
         }
@@ -97,7 +97,6 @@ app.put('/user/:userId', async (req, res) => {
             return res.status(400).json({ error: 'Data inválida' });
         }
 
-        // Atualizar saldo na coleção userBalances
         if (balance !== undefined) {
             await db.collection('userBalances').updateOne(
                 { userId: userId },
@@ -106,7 +105,6 @@ app.put('/user/:userId', async (req, res) => {
             );
         }
 
-        // Atualizar data de expiração na coleção expirationDates
         if (expirationDate) {
             await db.collection('expirationDates').updateOne(
                 { userId: userId },
