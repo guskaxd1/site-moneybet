@@ -35,11 +35,14 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ username, password }),
+                credentials: 'include',
+                mode: 'cors'
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    console.log('Login bem-sucedido, redirecionando para:', data.redirect);
                     window.location.href = data.redirect;
                 } else {
                     errorMessage.textContent = data.message || 'Erro ao fazer login';

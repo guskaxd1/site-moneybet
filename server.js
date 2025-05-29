@@ -33,7 +33,10 @@ async function connectDB() {
 let db;
 
 // Configurar middleware
-app.use(cors());
+app.use(cors({
+    origin: 'https://site-moneybet.onrender.com',
+    credentials: true
+}));
 app.use(express.static(path.join(__dirname, '.')));
 app.use(express.json());
 
@@ -42,12 +45,18 @@ app.use(session({
     secret: 'seu-segredo-aqui',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }
+    cookie: {
+        secure: false, // Em produção, use true com HTTPS
+        httpOnly: true,
+        sameSite: 'lax', // Ajustado para 'lax' para funcionar com redirecionamentos
+        maxAge: 24 * 60 * 60 * 1000 // 24 horas
+    }
 }));
 
 // Middleware para verificar autenticação
 const requireAuth = (req, res, next) => {
     console.log('Verificando autenticação:', req.session.isAuthenticated);
+    console.log('Cookies recebidos:', req.headers.cookie);
     if (req.session.isAuthenticated) {
         next();
     } else {
@@ -69,7 +78,7 @@ app.post('/login', (req, res) => {
 
     if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
         req.session.isAuthenticated = true;
-        console.log('Login bem-sucedido');
+        console.log('Login bem-sucedido, sessão criada:', req.sessionID);
         res.json({ success: true, redirect: '/' });
     } else {
         console.log('Falha no login: credenciais inválidas');

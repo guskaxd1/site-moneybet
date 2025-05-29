@@ -2,23 +2,40 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Verificando autenticação e iniciando fetch para carregar usuários...');
 
     // Verificar se o usuário está autenticado
-    fetch('https://site-moneybet.onrender.com/health', { credentials: 'include' }) // Testa a sessão
+    fetch('https://site-moneybet.onrender.com/health', { 
+        credentials: 'include',
+        mode: 'cors'
+    })
         .then(response => {
+            console.log('Resposta de /health:', response.status, response.redirected);
             if (response.status === 401 || response.redirected) {
                 console.log('Não autenticado, redirecionando para login');
                 window.location.href = '/login.html';
                 return;
             }
-            return fetch('https://site-moneybet.onrender.com/users', { credentials: 'include' });
+            console.log('Autenticado, buscando usuários...');
+            return fetch('https://site-moneybet.onrender.com/users', { 
+                credentials: 'include',
+                mode: 'cors'
+            });
         })
         .then(response => {
-            console.log('Resposta recebida de /users:', response);
+            if (!response) return; // Evita erro se redirecionado
+            console.log('Resposta de /users:', response.status, response.redirected);
+            if (response.redirected) {
+                console.log('Redirecionado para:', response.url);
+                window.location.href = '/login.html';
+                return;
+            }
             if (!response.ok) {
-                throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
+                return response.text().then(text => {
+                    throw new Error(`Erro na requisição: ${response.status} - ${response.statusText} - Resposta: ${text}`);
+                });
             }
             return response.json();
         })
         .then(users => {
+            if (!users) return; // Evita erro se redirecionado
             console.log('Dados recebidos:', users);
             const tableBody = document.getElementById('usersTableBody');
             if (!users || users.length === 0) {
@@ -65,7 +82,8 @@ function updateUser(userId) {
         headers: {
             'Content-Type': 'application/json'
         },
-        credentials: 'include' // Enviar cookies de sessão
+        credentials: 'include',
+        mode: 'cors'
     })
     .then(response => {
         console.log('Resposta da atualização:', response);
@@ -91,7 +109,8 @@ function handleLogout() {
         headers: {
             'Content-Type': 'application/json'
         },
-        credentials: 'include' // Enviar cookies de sessão
+        credentials: 'include',
+        mode: 'cors'
     })
     .then(response => response.json())
     .then(data => {
