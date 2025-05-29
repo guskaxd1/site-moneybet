@@ -83,18 +83,24 @@ function updateUser(userId) {
             'Content-Type': 'application/json'
         },
         credentials: 'include',
-        mode: 'cors'
+        mode: 'cors',
+        body: JSON.stringify({ balance: balance || null, expirationDate: expirationDate || null })
     })
     .then(response => {
-        console.log('Resposta da atualização:', response);
+        console.log('Resposta da atualização:', response.status, response.redirected);
         if (!response.ok) {
-            throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
+            return response.text().then(text => {
+                throw new Error(`Erro na requisição: ${response.status} - ${response.statusText} - Resposta: ${text}`);
+            });
         }
         return response.json();
     })
     .then(data => {
+        console.log('Dados retornados da atualização:', data);
         if (data.error) throw new Error(data.error);
         alert('Dados atualizados com sucesso!');
+        // Recarregar a página para refletir as alterações
+        location.reload();
     })
     .catch(error => {
         console.error('Erro ao atualizar dados:', error);
