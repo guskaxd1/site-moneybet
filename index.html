@@ -6,7 +6,6 @@
     <title>Dashboard de Assinaturas</title>
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
-    <!-- Ícones do Font Awesome para o menu -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 <body>
@@ -18,31 +17,11 @@
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li>
-                        <a href="#" class="active">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#">
-                            <i class="fas fa-users"></i> Usuários
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#">
-                            <i class="fas fa-money-bill-wave"></i> Pagamentos
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#">
-                            <i class="fas fa-cog"></i> Configurações
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" onclick="handleLogout()">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </a>
-                    </li>
+                    <li><a href="#" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="#"><i class="fas fa-users"></i> Usuários</a></li>
+                    <li><a href="#"><i class="fas fa-money-bill-wave"></i> Pagamentos</a></li>
+                    <li><a href="#"><i class="fas fa-cog"></i> Configurações</a></li>
+                    <li><a href="#" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </nav>
         </aside>
@@ -83,9 +62,7 @@
                             <th>Ações</th>
                         </tr>
                     </thead>
-                    <tbody id="usersTableBody">
-                        <!-- Dados serão preenchidos pelo script.js -->
-                    </tbody>
+                    <tbody id="usersTableBody"></tbody>
                 </table>
             </div>
         </main>
