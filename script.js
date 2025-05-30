@@ -1,5 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Verificando autenticação e iniciando fetch para carregar usuários...');
+    console.log('Iniciando script: Verificando autenticação e carregando dados...');
+
+    // Elementos do DOM
+    const tableBody = document.getElementById('usersTableBody');
+    const totalUsersEl = document.getElementById('total-users');
+    const totalBalanceEl = document.getElementById('total-balance');
+    const activeSubscriptionsEl = document.getElementById('active-subscriptions');
 
     // Função para gerenciar a navegação ativa
     const navLinks = document.querySelectorAll('.sidebar-nav a');
@@ -13,67 +19,98 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Função para carregar usuários
+    // Função para carregar usuários e atualizar o painel/tabela
     function loadUsers() {
-        fetch('https://site-moneybet.onrender.com/users', { 
+        console.log('Carregando usuários...');
+
+        // Verificar autenticação
+        fetch('https://site-moneybet.onrender.com/health', {
             credentials: 'include',
             mode: 'cors'
         })
         .then(response => {
-            if (!response) return;
+            console.log('Resposta de /health:', response.status, response.redirected);
+            if (response.status === 401 || response.redirected) {
+                console.log('Não autenticado, redirecionando para login');
+                window.location.href = '/login.html';
+                return null;
+            }
+            console.log('Autenticado, buscando usuários...');
+            return fetch('https://site-moneybet.onrender.com/users', {
+                credentials: 'include',
+                mode: 'cors'
+            });
+        })
+        .then(response => {
+            if (!response) return null;
             console.log('Resposta de /users:', response.status, response.redirected);
             if (response.redirected) {
                 console.log('Redirecionado para:', response.url);
                 window.location.href = '/login.html';
-                return;
+                return null;
             }
             if (!response.ok) {
                 return response.text().then(text => {
-                    throw new Error(`Erro na requisição: ${response.status} - ${response.statusText} - Resposta: ${text}`);
+                    throw new Error(`Erro na requisição: ${response.status} - ${response.statusText} - ${text}`);
                 });
             }
             return response.json();
         })
         .then(users => {
             if (!users) return;
+
             console.log('Dados recebidos:', users);
-            const tableBody = document.getElementById('usersTableBody');
-            if (!users || users.length === 0) {
-                console.log('Nenhum usuário encontrado.');
+            if (!Array.isArray(users) || users.length === 0) {
+                console.log('Nenhum usuário encontrado ou dados inválidos.');
                 tableBody.innerHTML = '<tr><td colspan="8">Nenhum usuário encontrado.</td></tr>';
+                totalUsersEl.textContent = '0';
+                totalBalanceEl.textContent = '0.00';
+                activeSubscriptionsEl.textContent = '0';
                 return;
             }
 
-            // Atualizar o Painel Administrativo
+            // Atualizar Painel Administrativo
             const totalUsers = users.length;
-            const totalBalance = users.reduce((sum, user) => sum + user.balance, 0);
+            const totalBalance = users.reduce((sum, user) => sum + (user.balance || 0), 0);
+            const currentDate = new Date();
             const activeSubscriptions = users.filter(user => {
-                return user.expirationDate && new Date(user.expirationDate) > new Date();
+                if (!user.expirationDate) return false;
+                try {
+                    const expiration = new Date(user.expirationDate);
+                    return !isNaN(expiration.getTime()) && expiration > currentDate;
+                } catch (error) {
+                    console.error(`Erro ao processar expirationDate para user ${user.userId}:`, error);
+                    return false;
+                }
             }).length;
 
-            document.getElementById('total-users').textContent = totalUsers;
-            document.getElementById('total-balance').textContent = totalBalance.toFixed(2);
-            document.getElementById('active-subscriptions').textContent = activeSubscriptions;
+            console.log('Total de Usuários:', totalUsers);
+            console.log('Saldo Total:', totalBalance);
+            console.log('Assinaturas Ativas:', activeSubscriptions);
 
-            // Preencher a tabela
+            totalUsersEl.textContent = totalUsers;
+            totalBalanceEl.textContent = totalBalance.toFixed(2);
+            activeSubscriptionsEl.textContent = activeSubscriptions;
+
+            // Preencher Tabela
             tableBody.innerHTML = '';
             users.forEach(user => {
                 console.log('Processando usuário:', user.userId);
                 const row = document.createElement('tr');
+                const balanceValue = user.balance || 0;
+                const expirationValue = user.expirationDate ? new Date(user.expirationDate).toISOString().split('T')[0] : '';
                 row.innerHTML = `
-                    <td>${user.userId}</td>
-                    <td>${user.name}</td>
+                    <td>${user.userId || '-'}</td>
+                    <td>${user.name || '-'}</td>
                     <td>${user.whatsapp || '-'}</td>
                     <td>${user.registeredAt ? new Date(user.registeredAt).toLocaleDateString('pt-BR') : '-'}</td>
                     <td>${
-                        user.paymentHistory.length > 0 
-                        ? user.paymentHistory.map(p => `R$ ${p.amount.toFixed(2)} (${new Date(p.timestamp).toLocaleDateString('pt-BR')})`).join('<br>')
+                        Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0
+                        ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${new Date(p.timestamp).toLocaleDateString('pt-BR')})`).join('<br>')
                         : '-'
                     }</td>
-                    <td><input type="number" step="0.01" value="${user.balance.toFixed(2)}" id="balance-${user.userId}"></td>
-                    <td><input type="date" value="${
-                        user.expirationDate ? new Date(user.expirationDate).toISOString().split('T')[0] : ''
-                    }" id="expiration-${user.userId}"></td>
+                    <td><input type="number" step="0.01" value="${balanceValue.toFixed(2)}" id="balance-${user.userId}"></td>
+                    <td><input type="date" value="${expirationValue}" id="expiration-${user.userId}"></td>
                     <td><button onclick="updateUser('${user.userId}')">Salvar</button></td>
                 `;
                 tableBody.appendChild(row);
@@ -81,88 +118,84 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(error => {
             console.error('Erro ao carregar usuários:', error);
-            const tableBody = document.getElementById('usersTableBody');
             tableBody.innerHTML = `<tr><td colspan="8">Erro ao carregar usuários: ${error.message}</td></tr>`;
+            totalUsersEl.textContent = '0';
+            totalBalanceEl.textContent = '0.00';
+            activeSubscriptionsEl.textContent = '0';
         });
     }
 
-    // Verificar autenticação e carregar usuários inicialmente
-    fetch('https://site-moneybet.onrender.com/health', { 
-        credentials: 'include',
-        mode: 'cors'
-    })
-    .then(response => {
-        console.log('Resposta de /health:', response.status, response.redirected);
-        if (response.status === 401 || response.redirected) {
-            console.log('Não autenticado, redirecionando para login');
-            window.location.href = '/login.html';
+    // Inicializar o carregamento de usuários
+    loadUsers();
+    // Atualizar a cada 30 segundos
+    setInterval(loadUsers, 30000);
+
+    // Função para atualizar usuário
+    function updateUser(userId) {
+        console.log(`Atualizando usuário ${userId}...`);
+        const balance = document.getElementById(`balance-${userId}`).value;
+        const expirationDate = document.getElementById(`expiration-${userId}`).value;
+
+        if (isNaN(balance) || balance < 0) {
+            alert('Saldo inválido. Insira um número positivo.');
             return;
         }
-        console.log('Autenticado, buscando usuários...');
-        loadUsers();
-        setInterval(loadUsers, 30000);
-    })
-    .catch(error => {
-        console.error('Erro ao verificar autenticação:', error);
-        window.location.href = '/login.html';
-    });
+
+        fetch(`https://site-moneybet.onrender.com/user/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            mode: 'cors',
+            body: JSON.stringify({
+                balance: balance || null,
+                expirationDate: expirationDate || null
+            })
+        })
+        .then(response => {
+            console.log('Resposta da atualização:', response.status, response.redirected);
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`Erro na requisição: ${response.status} - ${response.statusText} - ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Dados retornados da atualização:', data);
+            if (data.error) throw new Error(data.error);
+            alert('Dados atualizados com sucesso!');
+            loadUsers(); // Recarregar dados após atualização
+        })
+        .catch(error => {
+            console.error('Erro ao atualizar dados:', error);
+            alert('Erro ao atualizar dados: ' + error.message);
+        });
+    }
+
+    // Função para logout
+    function handleLogout() {
+        console.log('Fazendo logout...');
+        fetch('/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            mode: 'cors'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect;
+            } else {
+                alert('Erro ao fazer logout: ' + (data.message || 'Erro desconhecido'));
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao fazer logout:', error);
+            alert('Erro ao fazer logout: ' + error.message);
+        });
+    }
 });
-
-function updateUser(userId) {
-    console.log(`Atualizando usuário ${userId}...`);
-    const balance = document.getElementById(`balance-${userId}`).value;
-    const expirationDate = document.getElementById(`expiration-${userId}`).value;
-
-    fetch(`https://site-moneybet.onrender.com/user/${userId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        mode: 'cors',
-        body: JSON.stringify({ balance: balance || null, expirationDate: expirationDate || null })
-    })
-    .then(response => {
-        console.log('Resposta da atualização:', response.status, response.redirected);
-        if (!response.ok) {
-            return response.text().then(text => {
-                throw new Error(`Erro na requisição: ${response.status} - ${response.statusText} - Resposta: ${text}`);
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Dados retornados da atualização:', data);
-        if (data.error) throw new Error(data.error);
-        alert('Dados atualizados com sucesso!');
-        location.reload();
-    })
-    .catch(error => {
-        console.error('Erro ao atualizar dados:', error);
-        alert('Erro ao atualizar dados: ' + error.message);
-    });
-}
-
-function handleLogout() {
-    console.log('Fazendo logout...');
-    fetch('/logout', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        mode: 'cors'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.href = data.redirect;
-        } else {
-            alert('Erro ao fazer logout: ' + (data.message || 'Erro desconhecido'));
-        }
-    })
-    .catch(error => {
-        console.error('Erro ao fazer logout:', error);
-        alert('Erro ao fazer logout: ' + error.message);
-    });
-}
