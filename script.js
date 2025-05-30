@@ -43,7 +43,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 tableBody.innerHTML = '<tr><td colspan="8">Nenhum usuário encontrado.</td></tr>';
                 return;
             }
-            tableBody.innerHTML = ''; // Limpar a tabela antes de atualizar
+
+            // Atualizar o Painel Administrativo
+            const totalUsers = users.length;
+            const totalBalance = users.reduce((sum, user) => sum + user.balance, 0);
+            const activeSubscriptions = users.filter(user => {
+                return user.expirationDate && new Date(user.expirationDate) > new Date();
+            }).length;
+
+            document.getElementById('total-users').textContent = totalUsers;
+            document.getElementById('total-balance').textContent = totalBalance.toFixed(2);
+            document.getElementById('active-subscriptions').textContent = activeSubscriptions;
+
+            // Preencher a tabela
+            tableBody.innerHTML = '';
             users.forEach(user => {
                 console.log('Processando usuário:', user.userId);
                 const row = document.createElement('tr');
@@ -86,8 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         console.log('Autenticado, buscando usuários...');
-        loadUsers(); // Carregar usuários inicialmente
-        // Atualizar a cada 30 segundos
+        loadUsers();
         setInterval(loadUsers, 30000);
     })
     .catch(error => {
@@ -123,7 +135,6 @@ function updateUser(userId) {
         console.log('Dados retornados da atualização:', data);
         if (data.error) throw new Error(data.error);
         alert('Dados atualizados com sucesso!');
-        // Recarregar a página para refletir as alterações
         location.reload();
     })
     .catch(error => {

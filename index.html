@@ -6,6 +6,8 @@
     <title>Dashboard de Assinaturas</title>
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
+    <!-- Ícones do Font Awesome para o menu -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 <body>
     <div class="layout">
@@ -16,9 +18,31 @@
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li><a href="#" class="active">Dashboard</a></li>
-                    <li><a href="#">Usuários</a></li>
-                    <li><a href="#" onclick="handleLogout()">Logout</a></li>
+                    <li>
+                        <a href="#" class="active">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="fas fa-users"></i> Usuários
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="fas fa-money-bill-wave"></i> Pagamentos
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="fas fa-cog"></i> Configurações
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="handleLogout()">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </aside>
@@ -29,6 +53,22 @@
                 <h1>Dashboard de Assinaturas</h1>
                 <button class="logout-btn" onclick="handleLogout()">Sair</button>
             </header>
+            <!-- Painel Administrativo -->
+            <div class="admin-panel">
+                <div class="panel-card">
+                    <h3>Total de Usuários</h3>
+                    <p id="total-users">0</p>
+                </div>
+                <div class="panel-card">
+                    <h3>Saldo Total (R$)</h3>
+                    <p id="total-balance">0.00</p>
+                </div>
+                <div class="panel-card">
+                    <h3>Assinaturas Ativas</h3>
+                    <p id="active-subscriptions">0</p>
+                </div>
+            </div>
+            <!-- Tabela de Usuários -->
             <div class="container">
                 <table>
                     <thead>
