@@ -4,6 +4,7 @@ const path = require('path');
 require('dotenv').config();
 const cors = require('cors');
 const session = require('express-session');
+const MongoStore = require('connect-mongo'); // Importar o MongoStore
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -40,15 +41,20 @@ app.use(cors({
 app.use(express.static(path.join(__dirname, '.')));
 app.use(express.json());
 
-// Configurar sessões
+// Configurar sessões com MongoStore
 app.use(session({
     secret: 'seu-segredo-aqui',
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: mongoUri, // Usar a mesma URI do MongoDB
+        collectionName: 'sessions', // Nome da coleção para armazenar sessões
+        ttl: 24 * 60 * 60 // Tempo de vida da sessão em segundos (24 horas)
+    }),
     cookie: {
         secure: false, // Em produção, use true com HTTPS
         httpOnly: true,
-        sameSite: 'lax', // Ajustado para 'lax' para funcionar com redirecionamentos
+        sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24 horas
     }
 }));

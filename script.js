@@ -1,26 +1,26 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Verificando autenticação e iniciando fetch para carregar usuários...');
 
-    // Verificar se o usuário está autenticado
-    fetch('https://site-moneybet.onrender.com/health', { 
-        credentials: 'include',
-        mode: 'cors'
-    })
-        .then(response => {
-            console.log('Resposta de /health:', response.status, response.redirected);
-            if (response.status === 401 || response.redirected) {
-                console.log('Não autenticado, redirecionando para login');
-                window.location.href = '/login.html';
-                return;
+    // Função para gerenciar a navegação ativa
+    const navLinks = document.querySelectorAll('.sidebar-nav a');
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            if (!link.getAttribute('onclick')) {
+                e.preventDefault();
+                navLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
             }
-            console.log('Autenticado, buscando usuários...');
-            return fetch('https://site-moneybet.onrender.com/users', { 
-                credentials: 'include',
-                mode: 'cors'
-            });
+        });
+    });
+
+    // Função para carregar usuários
+    function loadUsers() {
+        fetch('https://site-moneybet.onrender.com/users', { 
+            credentials: 'include',
+            mode: 'cors'
         })
         .then(response => {
-            if (!response) return; // Evita erro se redirecionado
+            if (!response) return;
             console.log('Resposta de /users:', response.status, response.redirected);
             if (response.redirected) {
                 console.log('Redirecionado para:', response.url);
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
         })
         .then(users => {
-            if (!users) return; // Evita erro se redirecionado
+            if (!users) return;
             console.log('Dados recebidos:', users);
             const tableBody = document.getElementById('usersTableBody');
             if (!users || users.length === 0) {
@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tableBody.innerHTML = '<tr><td colspan="8">Nenhum usuário encontrado.</td></tr>';
                 return;
             }
+            tableBody.innerHTML = ''; // Limpar a tabela antes de atualizar
             users.forEach(user => {
                 console.log('Processando usuário:', user.userId);
                 const row = document.createElement('tr');
@@ -70,6 +71,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const tableBody = document.getElementById('usersTableBody');
             tableBody.innerHTML = `<tr><td colspan="8">Erro ao carregar usuários: ${error.message}</td></tr>`;
         });
+    }
+
+    // Verificar autenticação e carregar usuários inicialmente
+    fetch('https://site-moneybet.onrender.com/health', { 
+        credentials: 'include',
+        mode: 'cors'
+    })
+    .then(response => {
+        console.log('Resposta de /health:', response.status, response.redirected);
+        if (response.status === 401 || response.redirected) {
+            console.log('Não autenticado, redirecionando para login');
+            window.location.href = '/login.html';
+            return;
+        }
+        console.log('Autenticado, buscando usuários...');
+        loadUsers(); // Carregar usuários inicialmente
+        // Atualizar a cada 30 segundos
+        setInterval(loadUsers, 30000);
+    })
+    .catch(error => {
+        console.error('Erro ao verificar autenticação:', error);
+        window.location.href = '/login.html';
+    });
 });
 
 function updateUser(userId) {

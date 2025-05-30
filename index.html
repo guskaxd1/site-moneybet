@@ -5,29 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Assinaturas</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Dashboard de Assinaturas</h1>
-            <button onclick="handleLogout()" class="logout-btn">Sair</button>
-        </header>
-        <table id="usersTable">
-            <thead>
-                <tr>
-                    <th>User ID</th>
-                    <th>Nome</th>
-                    <th>WhatsApp</th>
-                    <th>Data de Registro</th>
-                    <th>Histórico de Pagamentos</th>
-                    <th>Saldo (R$)</th>
-                    <th>Data de Expiração</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody id="usersTableBody"></tbody>
-        </table>
+    <div class="layout">
+        <!-- Menu Lateral -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>MoneyBet</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="#" class="active">Dashboard</a></li>
+                    <li><a href="#">Usuários</a></li>
+                    <li><a href="#" onclick="handleLogout()">Logout</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <header>
+                <h1>Dashboard de Assinaturas</h1>
+                <button class="logout-btn" onclick="handleLogout()">Sair</button>
+            </header>
+            <div class="container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Nome</th>
+                            <th>WhatsApp</th>
+                            <th>Data de Registro</th>
+                            <th>Histórico de Pagamentos</th>
+                            <th>Saldo (R$)</th>
+                            <th>Data de Expiração</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- Dados serão preenchidos pelo script.js -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
     </div>
-    <script src="script.js"></script>
 </body>
 </html>
