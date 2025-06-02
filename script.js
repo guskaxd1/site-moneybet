@@ -6,8 +6,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalUsersEl = document.getElementById('total-users');
     const totalBalanceEl = document.getElementById('total-balance');
     const activeSubscriptionsEl = document.getElementById('active-subscriptions');
+    const expiredSubscriptionsEl = document.getElementById('expired-subscriptions');
     const sidebar = document.querySelector('.sidebar');
     const menuToggle = document.querySelector('.menu-toggle');
+    const searchContainer = document.getElementById('search-container');
+    const searchInput = document.getElementById('search-input');
+    const usersTable = document.getElementById('usersTable');
+    const logoutBtn = document.getElementById('logoutBtn');
+    let allUsers = []; // Armazenar todos os usuários para pesquisa
 
     // Alternar menu em telas menores
     menuToggle.addEventListener('click', () => {
@@ -25,6 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadDashboard();
             } else if (link.textContent.trim() === 'Usuários') {
                 loadUsers();
+            } else if (link.id === 'logout') {
+                handleLogout();
             }
             // Fechar menu ao clicar em um link em telas menores
             if (window.innerWidth <= 768) {
@@ -36,6 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Função para carregar o Dashboard (estatísticas)
     function loadDashboard() {
         console.log('Carregando Dashboard...');
+        searchContainer.style.display = 'none';
+        usersTable.style.display = 'none';
         fetch('https://site-moneybet.onrender.com/users', {
             credentials: 'include',
             mode: 'cors'
@@ -54,25 +64,23 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(users => {
             if (!users || !Array.isArray(users)) {
                 console.log('Nenhum dado recebido ou formato inválido.');
-                tableBody.innerHTML = '<tr><td colspan="8">Nenhum dado disponível.</td></tr>';
-                updateDashboardStats(users || []);
+                updateDashboardStats([]);
                 return;
             }
+            allUsers = users; // Armazenar usuários para pesquisa
             updateDashboardStats(users);
-            tableBody.innerHTML = '<tr><td colspan="8">Estatísticas exibidas acima.</td></tr>';
         })
         .catch(error => {
             console.error('Erro ao carregar Dashboard:', error);
-            tableBody.innerHTML = `<tr><td colspan="8">Erro: ${error.message}</td></tr>`;
-            totalUsersEl.textContent = '0';
-            totalBalanceEl.textContent = '0.00';
-            activeSubscriptionsEl.textContent = '0';
+            updateDashboardStats([]);
         });
     }
 
     // Função para carregar Usuários (lista de usuários)
     function loadUsers() {
         console.log('Carregando Usuários...');
+        searchContainer.style.display = 'block';
+        usersTable.style.display = 'table';
         fetch('https://site-moneybet.onrender.com/users', {
             credentials: 'include',
             mode: 'cors'
@@ -92,18 +100,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!users || !Array.isArray(users)) {
                 console.log('Nenhum usuário encontrado ou dados inválidos.');
                 tableBody.innerHTML = '<tr><td colspan="8">Nenhum usuário encontrado.</td></tr>';
-                updateDashboardStats(users || []);
+                updateDashboardStats([]);
                 return;
             }
+            allUsers = users; // Armazenar usuários para pesquisa
             updateDashboardStats(users);
             populateUserTable(users);
+            searchInput.value = ''; // Limpar campo de pesquisa
         })
         .catch(error => {
             console.error('Erro ao carregar Usuários:', error);
             tableBody.innerHTML = `<tr><td colspan="8">Erro: ${error.message}</td></tr>`;
-            totalUsersEl.textContent = '0';
-            totalBalanceEl.textContent = '0.00';
-            activeSubscriptionsEl.textContent = '0';
+            updateDashboardStats([]);
         });
     }
 
@@ -122,10 +130,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 return false;
             }
         }).length;
+        const expiredSubscriptions = users.filter(user => {
+            if (!user.expirationDate) return false;
+            try {
+                const expiration = new Date(user.expirationDate);
+                return !isNaN(expiration.getTime()) && expiration <= currentDate;
+            } catch (error) {
+                console.error(`Erro ao processar expirationDate:`, error);
+                return false;
+            }
+        }).length;
 
         totalUsersEl.textContent = totalUsers;
         totalBalanceEl.textContent = totalBalance.toFixed(2);
         activeSubscriptionsEl.textContent = activeSubscriptions;
+        expiredSubscriptionsEl.textContent = expiredSubscriptions;
     }
 
     // Função para popular a tabela de usuários
@@ -153,6 +172,19 @@ document.addEventListener('DOMContentLoaded', () => {
             tableBody.appendChild(row);
         });
     }
+
+    // Função para filtrar usuários com base na pesquisa
+    function filterUsers() {
+        const query = searchInput.value.toLowerCase();
+        const filteredUsers = allUsers.filter(user => 
+            (user.userId && user.userId.toLowerCase().includes(query)) ||
+            (user.name && user.name.toLowerCase().includes(query))
+        );
+        populateUserTable(filteredUsers);
+    }
+
+    // Adicionar evento de pesquisa
+    searchInput.addEventListener('input', filterUsers);
 
     // Função para atualizar usuário
     function updateUser(userId) {
@@ -222,6 +254,9 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Erro ao fazer logout: ' + error.message);
         });
     }
+
+    // Adicionar evento de logout
+    logoutBtn.addEventListener('click', handleLogout);
 
     // Inicializar com o Dashboard
     loadDashboard();

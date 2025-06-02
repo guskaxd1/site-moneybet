@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Assinaturas</title>
+    <title>MoneyBet</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 <body>
     <div class="layout">
-        <!-- Botão de Menu para Mobile -->
-        <button class="menu-toggle" aria-label="Toggle menu">
+        <!-- Botão de menu para mobile -->
+        <button class="menu-toggle">
             <i class="fas fa-bars"></i>
         </button>
+
         <!-- Menu Lateral -->
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -25,7 +26,7 @@
                     <li><a href="#" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                     <li><h3>CONTROLES</h3></li>
                     <li><a href="#"><i class="fas fa-users"></i> Usuários</a></li>
-                    <li><a href="#" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    <li><a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </nav>
         </aside>
@@ -34,26 +35,36 @@
         <main class="main-content">
             <header>
                 <h1>Dashboard de Assinaturas</h1>
-                <button class="logout-btn" onclick="handleLogout()">Sair</button>
+                <button class="logout-btn" id="logoutBtn">Sair</button>
             </header>
-            <!-- Painel Administrativo -->
-            <div class="admin-panel">
-                <div class="panel-card">
-                    <h3>Total de Usuários</h3>
-                    <p id="total-users">0</p>
-                </div>
-                <div class="panel-card">
-                    <h3>Saldo Total (R$)</h3>
-                    <p id="total-balance">0.00</p>
-                </div>
-                <div class="panel-card">
-                    <h3>Assinaturas Ativas</h3>
-                    <p id="active-subscriptions">0</p>
-                </div>
-            </div>
-            <!-- Tabela de Usuários -->
             <div class="container">
-                <table>
+                <!-- Painel Administrativo -->
+                <div class="admin-panel">
+                    <div class="panel-card">
+                        <h3>Total de Usuários</h3>
+                        <p id="total-users">0</p>
+                    </div>
+                    <div class="panel-card">
+                        <h3>Saldo Total (R$)</h3>
+                        <p id="total-balance">0.00</p>
+                    </div>
+                    <div class="panel-card">
+                        <h3>Assinaturas Ativas</h3>
+                        <p id="active-subscriptions">0</p>
+                    </div>
+                    <div class="panel-card">
+                        <h3>Assinaturas Vencidas</h3>
+                        <p id="expired-subscriptions">0</p>
+                    </div>
+                </div>
+
+                <!-- Pesquisa (apenas na aba Usuários) -->
+                <div id="search-container" style="display: none; margin-bottom: 20px;">
+                    <input type="text" id="search-input" placeholder="Pesquisar por ID ou Nome" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+
+                <!-- Tabela de Usuários -->
+                <table id="usersTable" style="display: none;">
                     <thead>
                         <tr>
                             <th>User ID</th>
@@ -66,7 +77,9 @@
                             <th>Ações</th>
                         </tr>
                     </thead>
-                    <tbody id="usersTableBody"></tbody>
+                    <tbody id="usersTableBody">
+                        <!-- Conteúdo gerado dinamicamente -->
+                    </tbody>
                 </table>
             </div>
         </main>
