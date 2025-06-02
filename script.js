@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Iniciando script: Verificando autenticação e carregando dados...');
+    console.log('Iniciando script: Carregando dados...');
 
     // Elementos do DOM
     const tableBody = document.getElementById('usersTableBody');
@@ -64,11 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(response => {
             console.log('Resposta recebida:', response.status, response.statusText);
             if (!response.ok) {
-                if (response.status === 401) {
-                    console.log('Não autenticado, redirecionando para login');
-                    window.location.href = '/login.html';
-                    return null;
-                }
                 throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
             }
             const contentType = response.headers.get('content-type');
@@ -112,11 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(response => {
             console.log('Resposta recebida:', response.status, response.statusText);
             if (!response.ok) {
-                if (response.status === 401) {
-                    console.log('Não autenticado, redirecionando para login');
-                    window.location.href = '/login.html';
-                    return null;
-                }
                 throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
             }
             const contentType = response.headers.get('content-type');
@@ -374,32 +364,13 @@ document.addEventListener('DOMContentLoaded', () => {
         errorDiv.style.display = 'block';
     }
 
-    // Função para logout
+    // Função para logout (desativada, mas mantida para compatibilidade)
     function handleLogout() {
-        console.log('Fazendo logout...');
-        fetch('/logout', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include',
-            mode: 'cors'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                window.location.href = data.redirect;
-            } else {
-                alert('Erro ao fazer logout: ' + (data.message || 'Erro desconhecido'));
-            }
-        })
-        .catch(error => {
-            console.error('Erro ao fazer logout:', error);
-            alert('Erro ao fazer logout: ' + error.message);
-        });
+        console.log('Logout desativado temporariamente.');
+        window.location.href = '/';
     }
 
-    // Adicionar evento de logout
+    // Adicionar evento de logout (mantido, mas não será funcional por agora)
     logoutBtn.addEventListener('click', handleLogout);
 
     // Inicializar com o Dashboard
