@@ -4,12 +4,33 @@ body {
     padding: 0;
     background-color: #f4f4f4;
     height: 100vh;
-    overflow: hidden;
+    overflow-x: hidden;
 }
 
 .layout {
     display: flex;
     height: 100vh;
+    transition: all 0.3s ease;
+}
+
+/* Botão de Menu para Mobile */
+.menu-toggle {
+    display: none;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: #3498db;
+    border: none;
+    color: white;
+    font-size: 20px;
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 1000;
+    cursor: pointer;
+}
+
+.menu-toggle:focus {
+    outline: none;
 }
 
 /* Estilos do Menu Lateral */
@@ -21,6 +42,11 @@ body {
     flex-direction: column;
     height: 100%;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    position: fixed;
+    top: 0;
+    left: 0;
+    transition: transform 0.3s ease;
+    z-index: 100;
 }
 
 .sidebar-header {
@@ -40,6 +66,15 @@ body {
 .sidebar-nav ul {
     list-style: none;
     padding: 0;
+    margin: 0;
+}
+
+.sidebar-nav h3 {
+    padding: 10px 20px;
+    font-size: 14px;
+    color: #bdc3c7;
+    text-transform: uppercase;
+    background-color: #2c3e50;
     margin: 0;
 }
 
@@ -88,7 +123,7 @@ body {
 
 .panel-card {
     flex: 1;
-    min-width: 200px;
+    min-width: 150px;
     text-align: center;
 }
 
@@ -109,7 +144,9 @@ body {
 .main-content {
     flex: 1;
     padding: 20px;
+    margin-left: 250px; /* Largura do sidebar */
     overflow-y: auto;
+    transition: margin-left 0.3s ease;
 }
 
 header {
@@ -142,6 +179,8 @@ th, td {
     text-align: left;
     border-bottom: 1px solid #ddd;
     vertical-align: middle;
+    word-wrap: break-word;
+    max-width: 0;
 }
 
 th {
@@ -157,6 +196,7 @@ td input[type="number"], td input[type="date"] {
     box-sizing: border-box;
     border: 1px solid #ddd;
     border-radius: 4px;
+    max-width: 120px;
 }
 
 td button {
@@ -230,4 +270,47 @@ tr:hover {
 
 .logout-btn:hover {
     background-color: #c0392b;
+}
+
+/* Media Queries para Responsividade */
+@media (max-width: 768px) {
+    .menu-toggle {
+        display: block;
+    }
+
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    .sidebar.active {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 10px;
+    }
+
+    .admin-panel {
+        flex-direction: column;
+        padding: 10px;
+    }
+
+    .panel-card {
+        min-width: 100%;
+        margin-bottom: 10px;
+    }
+
+    table {
+        font-size: 14px;
+    }
+
+    th, td {
+        padding: 8px;
+        max-width: 100px;
+    }
+
+    td input[type="number"], td input[type="date"] {
+        max-width: 100%;
+    }
 }

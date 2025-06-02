@@ -6,129 +6,153 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalUsersEl = document.getElementById('total-users');
     const totalBalanceEl = document.getElementById('total-balance');
     const activeSubscriptionsEl = document.getElementById('active-subscriptions');
+    const sidebar = document.querySelector('.sidebar');
+    const menuToggle = document.querySelector('.menu-toggle');
+
+    // Alternar menu em telas menores
+    menuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+    });
 
     // Função para gerenciar a navegação ativa
     const navLinks = document.querySelectorAll('.sidebar-nav a');
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
-            if (!link.getAttribute('onclick')) {
-                e.preventDefault();
-                navLinks.forEach(l => l.classList.remove('active'));
-                link.classList.add('active');
+            e.preventDefault();
+            navLinks.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+            if (link.textContent.trim() === 'Dashboard') {
+                loadDashboard();
+            } else if (link.textContent.trim() === 'Usuários') {
+                loadUsers();
+            }
+            // Fechar menu ao clicar em um link em telas menores
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('active');
             }
         });
     });
 
-    // Função para carregar usuários e atualizar o painel/tabela
-    function loadUsers() {
-        console.log('Carregando usuários...');
-
-        // Verificar autenticação
-        fetch('https://site-moneybet.onrender.com/health', {
+    // Função para carregar o Dashboard (estatísticas)
+    function loadDashboard() {
+        console.log('Carregando Dashboard...');
+        fetch('https://site-moneybet.onrender.com/users', {
             credentials: 'include',
             mode: 'cors'
         })
         .then(response => {
-            console.log('Resposta de /health:', response.status, response.redirected);
-            if (response.status === 401 || response.redirected) {
-                console.log('Não autenticado, redirecionando para login');
-                window.location.href = '/login.html';
-                return null;
-            }
-            console.log('Autenticado, buscando usuários...');
-            return fetch('https://site-moneybet.onrender.com/users', {
-                credentials: 'include',
-                mode: 'cors'
-            });
-        })
-        .then(response => {
-            if (!response) return null;
-            console.log('Resposta de /users:', response.status, response.redirected);
-            if (response.redirected) {
-                console.log('Redirecionado para:', response.url);
-                window.location.href = '/login.html';
-                return null;
-            }
             if (!response.ok) {
-                return response.text().then(text => {
-                    throw new Error(`Erro na requisição: ${response.status} - ${response.statusText} - ${text}`);
-                });
+                if (response.status === 401) {
+                    console.log('Não autenticado, redirecionando para login');
+                    window.location.href = '/login.html';
+                    return null;
+                }
+                throw new Error(`Erro na requisição: ${response.status}`);
             }
             return response.json();
         })
         .then(users => {
-            if (!users) return;
-
-            console.log('Dados recebidos:', users);
-            if (!Array.isArray(users) || users.length === 0) {
-                console.log('Nenhum usuário encontrado ou dados inválidos.');
-                tableBody.innerHTML = '<tr><td colspan="8">Nenhum usuário encontrado.</td></tr>';
-                totalUsersEl.textContent = '0';
-                totalBalanceEl.textContent = '0.00';
-                activeSubscriptionsEl.textContent = '0';
+            if (!users || !Array.isArray(users)) {
+                console.log('Nenhum dado recebido ou formato inválido.');
+                tableBody.innerHTML = '<tr><td colspan="8">Nenhum dado disponível.</td></tr>';
+                updateDashboardStats(users || []);
                 return;
             }
-
-            // Atualizar Painel Administrativo
-            const totalUsers = users.length;
-            const totalBalance = users.reduce((sum, user) => sum + (user.balance || 0), 0);
-            const currentDate = new Date();
-            const activeSubscriptions = users.filter(user => {
-                if (!user.expirationDate) return false;
-                try {
-                    const expiration = new Date(user.expirationDate);
-                    return !isNaN(expiration.getTime()) && expiration > currentDate;
-                } catch (error) {
-                    console.error(`Erro ao processar expirationDate para user ${user.userId}:`, error);
-                    return false;
-                }
-            }).length;
-
-            console.log('Total de Usuários:', totalUsers);
-            console.log('Saldo Total:', totalBalance);
-            console.log('Assinaturas Ativas:', activeSubscriptions);
-
-            totalUsersEl.textContent = totalUsers;
-            totalBalanceEl.textContent = totalBalance.toFixed(2);
-            activeSubscriptionsEl.textContent = activeSubscriptions;
-
-            // Preencher Tabela
-            tableBody.innerHTML = '';
-            users.forEach(user => {
-                console.log('Processando usuário:', user.userId);
-                const row = document.createElement('tr');
-                const balanceValue = user.balance || 0;
-                const expirationValue = user.expirationDate ? new Date(user.expirationDate).toISOString().split('T')[0] : '';
-                row.innerHTML = `
-                    <td>${user.userId || '-'}</td>
-                    <td>${user.name || '-'}</td>
-                    <td>${user.whatsapp || '-'}</td>
-                    <td>${user.registeredAt ? new Date(user.registeredAt).toLocaleDateString('pt-BR') : '-'}</td>
-                    <td>${
-                        Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0
-                        ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${new Date(p.timestamp).toLocaleDateString('pt-BR')})`).join('<br>')
-                        : '-'
-                    }</td>
-                    <td><input type="number" step="0.01" value="${balanceValue.toFixed(2)}" id="balance-${user.userId}"></td>
-                    <td><input type="date" value="${expirationValue}" id="expiration-${user.userId}"></td>
-                    <td><button onclick="updateUser('${user.userId}')">Salvar</button></td>
-                `;
-                tableBody.appendChild(row);
-            });
+            updateDashboardStats(users);
+            tableBody.innerHTML = '<tr><td colspan="8">Estatísticas exibidas acima.</td></tr>';
         })
         .catch(error => {
-            console.error('Erro ao carregar usuários:', error);
-            tableBody.innerHTML = `<tr><td colspan="8">Erro ao carregar usuários: ${error.message}</td></tr>`;
+            console.error('Erro ao carregar Dashboard:', error);
+            tableBody.innerHTML = `<tr><td colspan="8">Erro: ${error.message}</td></tr>`;
             totalUsersEl.textContent = '0';
             totalBalanceEl.textContent = '0.00';
             activeSubscriptionsEl.textContent = '0';
         });
     }
 
-    // Inicializar o carregamento de usuários
-    loadUsers();
-    // Atualizar a cada 30 segundos
-    setInterval(loadUsers, 30000);
+    // Função para carregar Usuários (lista de usuários)
+    function loadUsers() {
+        console.log('Carregando Usuários...');
+        fetch('https://site-moneybet.onrender.com/users', {
+            credentials: 'include',
+            mode: 'cors'
+        })
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    console.log('Não autenticado, redirecionando para login');
+                    window.location.href = '/login.html';
+                    return null;
+                }
+                throw new Error(`Erro na requisição: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(users => {
+            if (!users || !Array.isArray(users)) {
+                console.log('Nenhum usuário encontrado ou dados inválidos.');
+                tableBody.innerHTML = '<tr><td colspan="8">Nenhum usuário encontrado.</td></tr>';
+                updateDashboardStats(users || []);
+                return;
+            }
+            updateDashboardStats(users);
+            populateUserTable(users);
+        })
+        .catch(error => {
+            console.error('Erro ao carregar Usuários:', error);
+            tableBody.innerHTML = `<tr><td colspan="8">Erro: ${error.message}</td></tr>`;
+            totalUsersEl.textContent = '0';
+            totalBalanceEl.textContent = '0.00';
+            activeSubscriptionsEl.textContent = '0';
+        });
+    }
+
+    // Função para atualizar estatísticas no painel
+    function updateDashboardStats(users) {
+        const totalUsers = users.length;
+        const totalBalance = users.reduce((sum, user) => sum + (user.balance || 0), 0);
+        const currentDate = new Date();
+        const activeSubscriptions = users.filter(user => {
+            if (!user.expirationDate) return false;
+            try {
+                const expiration = new Date(user.expirationDate);
+                return !isNaN(expiration.getTime()) && expiration > currentDate;
+            } catch (error) {
+                console.error(`Erro ao processar expirationDate:`, error);
+                return false;
+            }
+        }).length;
+
+        totalUsersEl.textContent = totalUsers;
+        totalBalanceEl.textContent = totalBalance.toFixed(2);
+        activeSubscriptionsEl.textContent = activeSubscriptions;
+    }
+
+    // Função para popular a tabela de usuários
+    function populateUserTable(users) {
+        tableBody.innerHTML = '';
+        users.forEach(user => {
+            console.log('Processando usuário:', user.userId);
+            const row = document.createElement('tr');
+            const balanceValue = user.balance || 0;
+            const expirationValue = user.expirationDate ? new Date(user.expirationDate).toISOString().split('T')[0] : '';
+            row.innerHTML = `
+                <td>${user.userId || '-'}</td>
+                <td>${user.name || '-'}</td>
+                <td>${user.whatsapp || '-'}</td>
+                <td>${user.registeredAt ? new Date(user.registeredAt).toLocaleDateString('pt-BR') : '-'}</td>
+                <td>${
+                    Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0
+                    ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${new Date(p.timestamp).toLocaleDateString('pt-BR')})`).join('<br>')
+                    : '-'
+                }</td>
+                <td><input type="number" step="0.01" value="${balanceValue.toFixed(2)}" id="balance-${user.userId}"></td>
+                <td><input type="date" value="${expirationValue}" id="expiration-${user.userId}"></td>
+                <td><button onclick="updateUser('${user.userId}')">Salvar</button></td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
 
     // Função para atualizar usuário
     function updateUser(userId) {
@@ -198,4 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Erro ao fazer logout: ' + error.message);
         });
     }
+
+    // Inicializar com o Dashboard
+    loadDashboard();
 });
