@@ -3,8 +3,8 @@ const { MongoClient, ObjectId } = require('mongodb');
 const path = require('path');
 require('dotenv').config();
 const cors = require('cors');
-const session = require('express-session');
-const MongoStore = require('connect-mongo');
+// const session = require('express-session');
+// const MongoStore = require('connect-mongo');
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -43,22 +43,17 @@ app.use(cors({
 app.use(express.static(path.join(__dirname, '.')));
 app.use(express.json());
 
-// Configurar sessões com MongoStore
-const sessionStore = MongoStore.create({
-    mongoUrl: mongoUri,
-    collectionName: 'sessions',
-    ttl: 24 * 60 * 60
-});
-
-sessionStore.on('error', (error) => {
-    console.error('Erro no MongoStore:', error);
-});
-
+// Removido o middleware de sessão por agora
+/*
 app.use(session({
     secret: 'seu-segredo-aqui',
     resave: false,
     saveUninitialized: false,
-    store: sessionStore,
+    store: MongoStore.create({
+        mongoUrl: mongoUri,
+        collectionName: 'sessions',
+        ttl: 24 * 60 * 60
+    }),
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
@@ -66,8 +61,10 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000
     }
 }));
+*/
 
-// Middleware para verificar autenticação
+// Removido o middleware de autenticação
+/*
 const requireAuth = (req, res, next) => {
     console.log('Verificando autenticação:', req.session ? req.session.isAuthenticated : 'req.session é undefined');
     console.log('Cookies recebidos:', req.headers.cookie);
@@ -79,14 +76,18 @@ const requireAuth = (req, res, next) => {
         res.status(401).sendFile(path.join(__dirname, 'login.html'));
     }
 };
+*/
 
-// Usuário e senha fixos
+// Usuário e senha fixos (mantido para referência, mas não será usado agora)
+/*
 const ADMIN_CREDENTIALS = {
     username: 'adm1',
     password: 'Bueno00'
 };
+*/
 
-// Rota de login
+// Rota de login (mantida para compatibilidade, mas não será necessária)
+/*
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
     console.log(`Tentativa de login: username=${username}`);
@@ -106,8 +107,10 @@ app.post('/login', (req, res) => {
         res.status(401).json({ success: false, message: 'Usuário ou senha incorretos' });
     }
 });
+*/
 
-// Rota de logout
+// Rota de logout (mantida para compatibilidade, mas não será necessária)
+/*
 app.post('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
@@ -118,9 +121,10 @@ app.post('/logout', (req, res) => {
         res.json({ success: true, redirect: '/login.html' });
     });
 });
+*/
 
-// Rota para a raiz (/) que serve o index.html (protegida)
-app.get('/', requireAuth, (req, res) => {
+// Rota para a raiz (/) que serve o index.html (sem autenticação)
+app.get('/', (req, res) => {
     console.log('Rota / acessada');
     res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -131,8 +135,8 @@ app.get('/health', (req, res) => {
     res.json({ status: 'Servidor está rodando' });
 });
 
-// Rota para buscar todos os usuários (protegida)
-app.get('/users', requireAuth, async (req, res) => {
+// Rota para buscar todos os usuários (sem autenticação)
+app.get('/users', async (req, res) => {
     try {
         console.log('Rota /users acessada');
         if (!db) {
@@ -146,7 +150,7 @@ app.get('/users', requireAuth, async (req, res) => {
         const usersData = await Promise.all(users.map(async (user) => {
             console.log(`Processando usuário: ${user.userId}`);
             const balance = await db.collection('userBalances').findOne({ userId: user.userId }) || { balance: 0 };
-            const expiration = await db.collection('expirationDates').findOne({ userId: userId }) || { expirationDate: null };
+            const expiration = await db.collection('expirationDates').findOne({ userId: user.userId }) || { expirationDate: null };
             return {
                 userId: user.userId,
                 name: user.name,
@@ -167,8 +171,8 @@ app.get('/users', requireAuth, async (req, res) => {
     }
 });
 
-// Rota para buscar dados de um único usuário (protegida)
-app.get('/user/:userId', requireAuth, async (req, res) => {
+// Rota para buscar dados de um único usuário (sem autenticação)
+app.get('/user/:userId', async (req, res) => {
     try {
         console.log(`Rota /user/${req.params.userId} acessada`);
         if (!db) {
@@ -191,8 +195,8 @@ app.get('/user/:userId', requireAuth, async (req, res) => {
     }
 });
 
-// Rota para atualizar dados do usuário (protegida)
-app.put('/user/:userId', requireAuth, async (req, res) => {
+// Rota para atualizar dados do usuário (sem autenticação)
+app.put('/user/:userId', async (req, res) => {
     try {
         console.log(`Rota PUT /user/${req.params.userId} acessada`);
         if (!db) {
@@ -251,8 +255,8 @@ app.put('/user/:userId', requireAuth, async (req, res) => {
     }
 });
 
-// Rota para deletar/cancelar assinatura de um usuário (protegida)
-app.delete('/user/:userId', requireAuth, async (req, res) => {
+// Rota para deletar/cancelar assinatura de um usuário (sem autenticação)
+app.delete('/user/:userId', async (req, res) => {
     try {
         console.log(`Rota DELETE /user/${req.params.userId} acessada`);
         if (!db) {
