@@ -1,3 +1,31 @@
+// Funções globais para os botões de ação
+function openEditModal(userId, name, balance, expirationDate) {
+    console.log('Abrindo modal de edição para:', { userId, name, balance, expirationDate });
+    currentUserId = userId;
+    editIdInput.value = userId;
+    editNameInput.value = name;
+    editBalanceInput.value = balance.toFixed(2);
+    
+    if (expirationDate) {
+        const expDate = new Date(expirationDate);
+        const currentDate = new Date();
+        const diffTime = expDate - currentDate;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        editDaysInput.value = diffDays > 0 ? diffDays : 0;
+    } else {
+        editDaysInput.value = 0;
+    }
+
+    editModal.style.display = 'block';
+}
+
+function openCancelModal(userId, name) {
+    console.log('Abrindo modal de cancelamento para:', { userId, name });
+    currentUserId = userId;
+    cancelNameDisplay.textContent = name;
+    cancelModal.style.display = 'block';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Iniciando script: Carregando dados...');
 
@@ -212,33 +240,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Adicionar evento de pesquisa
     searchInput.addEventListener('input', filterUsers);
-
-    // Função para abrir o modal de edição
-    function openEditModal(userId, name, balance, expirationDate) {
-        currentUserId = userId;
-        editIdInput.value = userId;
-        editNameInput.value = name;
-        editBalanceInput.value = balance.toFixed(2);
-        
-        if (expirationDate) {
-            const expDate = new Date(expirationDate);
-            const currentDate = new Date();
-            const diffTime = expDate - currentDate;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            editDaysInput.value = diffDays > 0 ? diffDays : 0;
-        } else {
-            editDaysInput.value = 0;
-        }
-
-        editModal.style.display = 'block';
-    }
-
-    // Função para abrir o modal de cancelamento
-    function openCancelModal(userId, name) {
-        currentUserId = userId;
-        cancelNameDisplay.textContent = name;
-        cancelModal.style.display = 'block';
-    }
 
     // Fechar modais
     document.querySelectorAll('.modal-close, .cancel-btn').forEach(btn => {
