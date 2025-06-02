@@ -36,7 +36,8 @@ let db;
 // Configurar middleware
 app.use(cors({
     origin: 'https://site-moneybet.onrender.com',
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE']
 }));
 app.use(express.static(path.join(__dirname, '.')));
 app.use(express.json());
@@ -52,7 +53,7 @@ app.use(session({
         ttl: 24 * 60 * 60
     }),
     cookie: {
-        secure: false,
+        secure: process.env.NODE_ENV === 'production', // true em produção com HTTPS
         httpOnly: true,
         sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000
@@ -143,7 +144,7 @@ app.get('/users', requireAuth, async (req, res) => {
             };
         }));
 
-        console.log('Enviando resposta com os dados dos usuários');
+        console.log('Enviando resposta com os dados dos usuários:', usersData);
         res.json(usersData);
     } catch (err) {
         console.error('Erro na rota /users:', err.message);
@@ -197,7 +198,8 @@ app.put('/user/:userId', requireAuth, async (req, res) => {
             console.log(`Atualizando nome do usuário ${userId} para ${name}`);
             await db.collection('registeredUsers').updateOne(
                 { userId: userId },
-                { $set: { name: name } }
+                { $set: { name: name } },
+                { upsert: true }
             );
         }
 

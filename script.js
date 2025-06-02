@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Elementos do DOM
     const tableBody = document.getElementById('usersTableBody');
-    const totalUsersEl = document.getElementBySid('total-users');
+    const totalUsersEl = document.getElementById('total-users');
     const totalBalanceEl = document.getElementById('total-balance');
     const activeSubscriptionsEl = document.getElementById('active-subscriptions');
     const expiredSubscriptionsEl = document.getElementById('expired-subscriptions');
@@ -20,6 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const editBalanceInput = document.getElementById('edit-balance');
     const editDaysInput = document.getElementById('edit-days');
     const cancelNameDisplay = document.getElementById('cancel-name');
+    const loadingDiv = document.getElementById('loading');
+    const errorDiv = document.getElementById('error');
     let allUsers = []; // Armazenar todos os usuários para pesquisa
     let currentUserId = null;
 
@@ -52,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Função para carregar o Dashboard (estatísticas)
     function loadDashboard() {
         console.log('Carregando Dashboard...');
+        showLoading();
         searchContainer.style.display = 'none';
         usersTable.style.display = 'none';
         fetch('https://site-moneybet.onrender.com/users', {
@@ -65,28 +68,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = '/login.html';
                     return null;
                 }
-                throw new Error(`Erro na requisição: ${response.status}`);
+                throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
             }
             return response.json();
         })
         .then(users => {
+            hideLoading();
             if (!users || !Array.isArray(users)) {
-                console.log('Nenhum dado recebido ou formato inválido.');
+                console.log('Nenhum dado recebido ou formato inválido:', users);
                 updateDashboardStats([]);
+                showError('Nenhum dado disponível.');
                 return;
             }
-            allUsers = users; // Armazenar usuários para pesquisa
+            allUsers = users;
             updateDashboardStats(users);
+            console.log('Dados do Dashboard:', users);
         })
         .catch(error => {
+            hideLoading();
             console.error('Erro ao carregar Dashboard:', error);
             updateDashboardStats([]);
+            showError(`Erro ao carregar dados: ${error.message}`);
         });
     }
 
     // Função para carregar Usuários (lista de usuários)
     function loadUsers() {
         console.log('Carregando Usuários...');
+        showLoading();
         searchContainer.style.display = 'block';
         usersTable.style.display = 'table';
         fetch('https://site-moneybet.onrender.com/users', {
@@ -100,26 +109,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = '/login.html';
                     return null;
                 }
-                throw new Error(`Erro na requisição: ${response.status}`);
+                throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
             }
             return response.json();
         })
         .then(users => {
+            hideLoading();
             if (!users || !Array.isArray(users)) {
-                console.log('Nenhum usuário encontrado ou dados inválidos.');
+                console.log('Nenhum usuário encontrado ou dados inválidos:', users);
                 tableBody.innerHTML = '<tr><td colspan="8">Nenhum usuário encontrado.</td></tr>';
                 updateDashboardStats([]);
                 return;
             }
-            allUsers = users; // Armazenar usuários para pesquisa
+            allUsers = users;
             updateDashboardStats(users);
             populateUserTable(users);
-            searchInput.value = ''; // Limpar campo de pesquisa
+            console.log('Dados dos Usuários:', users);
         })
         .catch(error => {
+            hideLoading();
             console.error('Erro ao carregar Usuários:', error);
             tableBody.innerHTML = `<tr><td colspan="8">Erro: ${error.message}</td></tr>`;
             updateDashboardStats([]);
+            showError(`Erro ao carregar usuários: ${error.message}`);
         });
     }
 
@@ -204,7 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
         editNameInput.value = name;
         editBalanceInput.value = balance.toFixed(2);
         
-        // Calcular dias restantes a partir da data de expiração
         if (expirationDate) {
             const expDate = new Date(expirationDate);
             const currentDate = new Date();
@@ -253,7 +264,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Calcular nova data de expiração
         let expirationDate = null;
         if (days > 0) {
             const currentDate = new Date();
@@ -332,6 +342,23 @@ document.addEventListener('DOMContentLoaded', () => {
             cancelModal.style.display = 'none';
         }
     });
+
+    // Função para mostrar estado de carregamento
+    function showLoading() {
+        loadingDiv.style.display = 'block';
+        errorDiv.style.display = 'none';
+    }
+
+    // Função para ocultar estado de carregamento
+    function hideLoading() {
+        loadingDiv.style.display = 'none';
+    }
+
+    // Função para mostrar erro
+    function showError(message) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
 
     // Função para logout
     function handleLogout() {
