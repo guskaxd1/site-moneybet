@@ -20,15 +20,17 @@ function openEditModal(userId, name, balance, expirationDate) {
     editNameInput.value = name;
     editBalanceInput.value = balance.toFixed(2);
     
+    let daysRemaining = 0;
     if (expirationDate) {
         const expDate = new Date(expirationDate);
         const currentDate = new Date();
         const diffTime = expDate - currentDate;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        editDaysInput.value = diffDays > 0 ? diffDays : 0;
-    } else {
-        editDaysInput.value = 0;
+        daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        daysRemaining = daysRemaining > 0 ? daysRemaining : 0;
     }
+    // Set initial value and mark as not manually edited
+    editDaysInput.value = daysRemaining;
+    editDaysInput.dataset.manuallyEdited = 'false';
 
     editModal.style.display = 'block';
     console.log('Modal de edição exibido:', editModal.style.display);
@@ -225,9 +227,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Processando usuário:', user.userId);
             const row = document.createElement('tr');
             const balanceValue = user.balance || 0;
-            const expirationValue = user.expirationDate ? new Date(user.expirationDate).toISOString().split('T')[0] : '';
-            // Escapar aspas no nome para evitar quebras no onclick
-            const escapedName = (user.name || '').replace(/'/g, "\\'");
+            const expirationDate = user.expirationDate ? new Date(user.expirationDate) : null;
+            const expirationValue = expirationDate ? expirationDate.toISOString().split('T')[0] : '-';
             row.innerHTML = `
                 <td>${user.userId || '-'}</td>
                 <td>${user.name || '-'}</td>
@@ -239,10 +240,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     : '-'
                 }</td>
                 <td>${balanceValue.toFixed(2)}</td>
-                <td>${expirationValue || '-'}</td>
+                <td>${expirationValue}</td>
                 <td>
-                    <button class="edit-btn" onclick="openEditModal('${user.userId}', '${escapedName}', ${balanceValue}, '${user.expirationDate || ''}')"><i class="fas fa-edit"></i></button>
-                    <button class="delete-btn" onclick="openCancelModal('${user.userId}', '${escapedName}')"><i class="fas fa-times"></i></button>
+                    <button class="edit-btn" onclick="openEditModal('${user.userId}', '${(user.name || '').replace(/'/g, "\\'")}', ${balanceValue}, '${user.expirationDate || ''}')"><i class="fas fa-edit"></i></button>
+                    <button class="delete-btn" onclick="openCancelModal('${user.userId}', '${(user.name || '').replace(/'/g, "\\'")}')"><i class="fas fa-times"></i></button>
                 </td>
             `;
             tableBody.appendChild(row);
@@ -261,6 +262,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Adicionar evento de pesquisa
     searchInput.addEventListener('input', filterUsers);
+
+    // Detectar edição manual no campo de dias
+    editDaysInput.addEventListener('input', () => {
+        editDaysInput.dataset.manuallyEdited = 'true';
+    });
 
     // Fechar modais
     document.querySelectorAll('.modal-close, .cancel-btn').forEach(btn => {
