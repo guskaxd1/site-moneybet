@@ -37,7 +37,8 @@ let db;
 app.use(cors({
     origin: 'https://site-moneybet.onrender.com',
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE']
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    exposedHeaders: ['Set-Cookie'] // Expor o cabeçalho Set-Cookie
 }));
 app.use(express.static(path.join(__dirname, '.')));
 app.use(express.json());
@@ -64,11 +65,11 @@ app.use(session({
 const requireAuth = (req, res, next) => {
     console.log('Verificando autenticação:', req.session.isAuthenticated);
     console.log('Cookies recebidos:', req.headers.cookie);
-    if (req.session.isAuthenticated) {
+    if (req.session && req.session.isAuthenticated) {
         next();
     } else {
         console.log('Não autenticado, redirecionando para /login.html');
-        res.redirect('/login.html');
+        res.status(401).sendFile(path.join(__dirname, 'login.html'));
     }
 };
 
@@ -85,8 +86,14 @@ app.post('/login', (req, res) => {
 
     if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
         req.session.isAuthenticated = true;
-        console.log('Login bem-sucedido, sessão criada:', req.sessionID);
-        res.json({ success: true, redirect: '/' });
+        req.session.save(err => {
+            if (err) {
+                console.error('Erro ao salvar sessão:', err);
+                return res.status(500).json({ success: false, message: 'Erro ao salvar sessão' });
+            }
+            console.log('Login bem-sucedido, sessão criada:', req.sessionID);
+            res.json({ success: true, redirect: '/' });
+        });
     } else {
         console.log('Falha no login: credenciais inválidas');
         res.status(401).json({ success: false, message: 'Usuário ou senha incorretos' });
@@ -145,6 +152,7 @@ app.get('/users', requireAuth, async (req, res) => {
         }));
 
         console.log('Enviando resposta com os dados dos usuários:', usersData);
+        res.setHeader('Content-Type', 'application/json');
         res.json(usersData);
     } catch (err) {
         console.error('Erro na rota /users:', err.message);
@@ -165,6 +173,7 @@ app.get('/user/:userId', requireAuth, async (req, res) => {
         const balance = await db.collection('userBalances').findOne({ userId: userId }) || { balance: 0 };
         const expiration = await db.collection('expirationDates').findOne({ userId: userId }) || { expirationDate: null };
 
+        res.setHeader('Content-Type', 'application/json');
         res.json({
             balance: balance.balance,
             expirationDate: expiration.expirationDate
@@ -227,6 +236,7 @@ app.put('/user/:userId', requireAuth, async (req, res) => {
             }
         }
 
+        res.setHeader('Content-Type', 'application/json');
         res.json({ message: 'Dados atualizados com sucesso' });
     } catch (err) {
         console.error('Erro na rota PUT /user/:userId:', err.message);
@@ -248,6 +258,7 @@ app.delete('/user/:userId', requireAuth, async (req, res) => {
         console.log(`Cancelando assinatura do usuário ${userId}`);
         await db.collection('expirationDates').deleteOne({ userId: userId });
 
+        res.setHeader('Content-Type', 'application/json');
         res.json({ message: 'Assinatura cancelada com sucesso' });
     } catch (err) {
         console.error('Erro na rota DELETE /user/:userId:', err.message);

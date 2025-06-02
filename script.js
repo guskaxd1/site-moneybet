@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mode: 'cors'
         })
         .then(response => {
+            console.log('Resposta recebida:', response.status, response.statusText);
             if (!response.ok) {
                 if (response.status === 401) {
                     console.log('Não autenticado, redirecionando para login');
@@ -69,6 +70,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     return null;
                 }
                 throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
+            }
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error(`Resposta não é JSON: ${text.substring(0, 50)}...`);
+                });
             }
             return response.json();
         })
@@ -103,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mode: 'cors'
         })
         .then(response => {
+            console.log('Resposta recebida:', response.status, response.statusText);
             if (!response.ok) {
                 if (response.status === 401) {
                     console.log('Não autenticado, redirecionando para login');
@@ -110,6 +118,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     return null;
                 }
                 throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
+            }
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error(`Resposta não é JSON: ${text.substring(0, 50)}...`);
+                });
             }
             return response.json();
         })
