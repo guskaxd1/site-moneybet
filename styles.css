@@ -13,6 +13,7 @@ body {
 /* Layout principal */
 .layout {
     display: flex;
+    min-height: 100vh;
 }
 
 /* Menu lateral */
@@ -23,6 +24,7 @@ body {
     height: 100vh;
     position: fixed;
     transition: transform 0.3s ease;
+    z-index: 1000;
 }
 
 .sidebar-header {
@@ -76,7 +78,12 @@ body {
     padding: 10px;
     font-size: 20px;
     cursor: pointer;
-    z-index: 1000;
+    z-index: 1001;
+    border-radius: 4px;
+}
+
+.menu-toggle:hover {
+    background: #34495e;
 }
 
 /* Conteúdo principal */
@@ -84,13 +91,17 @@ body {
     margin-left: 250px;
     padding: 20px;
     width: calc(100% - 250px);
+    transition: margin-left 0.3s ease, width 0.3s ease;
 }
 
+/* Header */
 header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 header h1 {
@@ -104,6 +115,7 @@ header h1 {
     padding: 10px 20px;
     cursor: pointer;
     border-radius: 4px;
+    font-size: 14px;
 }
 
 .logout-btn:hover {
@@ -112,9 +124,9 @@ header h1 {
 
 /* Painel administrativo */
 .admin-panel {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
-    flex-wrap: wrap;
     margin-bottom: 20px;
 }
 
@@ -123,9 +135,12 @@ header h1 {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    flex: 1;
-    min-width: 200px;
     text-align: center;
+    transition: transform 0.2s ease;
+}
+
+.panel-card:hover {
+    transform: translateY(-3px);
 }
 
 .panel-card h3 {
@@ -159,6 +174,9 @@ th {
     background-color: #34495e;
     color: #ecf0f1;
     font-weight: normal;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 tr:hover {
@@ -172,22 +190,34 @@ tr:hover {
     cursor: pointer;
     font-size: 16px;
     margin-right: 10px;
+    transition: transform 0.2s ease, background-color 0.3s ease;
+    padding: 8px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.edit-btn i {
-    color: #3498db;
+.edit-btn {
+    background-color: #3498db;
 }
 
-.delete-btn i {
-    color: #e74c3c;
+.delete-btn {
+    background-color: #e74c3c;
 }
 
-.edit-btn:hover i {
-    color: #2980b9;
+.edit-btn i, .delete-btn i {
+    color: #fff;
 }
 
-.delete-btn:hover i {
-    color: #c0392b;
+.edit-btn:hover {
+    background-color: #2980b9;
+    transform: scale(1.1);
+}
+
+.delete-btn:hover {
+    background-color: #c0392b;
+    transform: scale(1.1);
 }
 
 /* Modal */
@@ -200,13 +230,16 @@ tr:hover {
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
 }
 
 .modal-content {
     background: #fff;
-    width: 90%;
+    width: 100%;
     max-width: 500px;
-    margin: 100px auto;
+    margin: 0 auto;
     border-radius: 8px;
     overflow: hidden;
 }
@@ -273,6 +306,7 @@ tr:hover {
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 14px;
 }
 
 .cancel-btn {
@@ -293,19 +327,43 @@ tr:hover {
     background: #2980b9;
 }
 
-.delete-btn {
+.delete-btn:not(.modal-btn) {
     background: #e74c3c;
     color: #fff;
 }
 
-.delete-btn:hover {
+.delete-btn:hover:not(.modal-btn) {
     background: #c0392b;
 }
 
 /* Responsividade */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 200px;
+    }
+
+    .main-content {
+        margin-left: 200px;
+        width: calc(100% - 200px);
+    }
+
+    .panel-card {
+        min-width: 180px;
+    }
+
+    table {
+        font-size: 14px;
+    }
+
+    th, td {
+        padding: 10px;
+    }
+}
+
 @media (max-width: 768px) {
     .sidebar {
         transform: translateX(-100%);
+        width: 250px;
     }
 
     .sidebar.active {
@@ -322,6 +380,60 @@ tr:hover {
     }
 
     .admin-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .panel-card {
+        min-width: 100%;
+    }
+
+    .container {
+        overflow-x: auto;
+    }
+
+    table {
+        min-width: 800px;
+    }
+
+    header h1 {
+        font-size: 20px;
+    }
+
+    .logout-btn {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+
+    .modal-content {
+        max-width: 90%;
+    }
+}
+
+@media (max-width: 480px) {
+    header {
         flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .logout-btn {
+        align-self: flex-end;
+    }
+
+    .panel-card p {
+        font-size: 20px;
+    }
+
+    .modal-header h2 {
+        font-size: 18px;
+    }
+
+    .modal-btn {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+
+    .edit-btn, .delete-btn {
+        padding: 6px;
+        font-size: 14px;
     }
 }
