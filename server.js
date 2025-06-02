@@ -38,23 +38,29 @@ app.use(cors({
     origin: 'https://site-moneybet.onrender.com',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    exposedHeaders: ['Set-Cookie'] // Expor o cabeçalho Set-Cookie
+    exposedHeaders: ['Set-Cookie']
 }));
 app.use(express.static(path.join(__dirname, '.')));
 app.use(express.json());
 
 // Configurar sessões com MongoStore
+const sessionStore = MongoStore.create({
+    mongoUrl: mongoUri,
+    collectionName: 'sessions',
+    ttl: 24 * 60 * 60
+});
+
+sessionStore.on('error', (error) => {
+    console.error('Erro no MongoStore:', error);
+});
+
 app.use(session({
     secret: 'seu-segredo-aqui',
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({
-        mongoUrl: mongoUri,
-        collectionName: 'sessions',
-        ttl: 24 * 60 * 60
-    }),
+    store: sessionStore,
     cookie: {
-        secure: process.env.NODE_ENV === 'production', // true em produção com HTTPS
+        secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
         sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000
@@ -63,8 +69,9 @@ app.use(session({
 
 // Middleware para verificar autenticação
 const requireAuth = (req, res, next) => {
-    console.log('Verificando autenticação:', req.session.isAuthenticated);
+    console.log('Verificando autenticação:', req.session ? req.session.isAuthenticated : 'req.session é undefined');
     console.log('Cookies recebidos:', req.headers.cookie);
+    console.log('Session ID:', req.sessionID);
     if (req.session && req.session.isAuthenticated) {
         next();
     } else {
@@ -139,7 +146,7 @@ app.get('/users', requireAuth, async (req, res) => {
         const usersData = await Promise.all(users.map(async (user) => {
             console.log(`Processando usuário: ${user.userId}`);
             const balance = await db.collection('userBalances').findOne({ userId: user.userId }) || { balance: 0 };
-            const expiration = await db.collection('expirationDates').findOne({ userId: user.userId }) || { expirationDate: null };
+            const expiration = await db.collection('expirationDates').findOne({ userId: userId }) || { expirationDate: null };
             return {
                 userId: user.userId,
                 name: user.name,
