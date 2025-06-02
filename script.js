@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Elementos do DOM
     const tableBody = document.getElementById('usersTableBody');
-    const totalUsersEl = document.getElementById('total-users');
+    const totalUsersEl = document.getElementBySid('total-users');
     const totalBalanceEl = document.getElementById('total-balance');
     const activeSubscriptionsEl = document.getElementById('active-subscriptions');
     const expiredSubscriptionsEl = document.getElementById('expired-subscriptions');
@@ -13,7 +13,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-input');
     const usersTable = document.getElementById('usersTable');
     const logoutBtn = document.getElementById('logoutBtn');
+    const editModal = document.getElementById('editModal');
+    const cancelModal = document.getElementById('cancelModal');
+    const editIdInput = document.getElementById('edit-id');
+    const editNameInput = document.getElementById('edit-name');
+    const editBalanceInput = document.getElementById('edit-balance');
+    const editDaysInput = document.getElementById('edit-days');
+    const cancelNameDisplay = document.getElementById('cancel-name');
     let allUsers = []; // Armazenar todos os usuários para pesquisa
+    let currentUserId = null;
 
     // Alternar menu em telas menores
     menuToggle.addEventListener('click', () => {
@@ -165,9 +173,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${new Date(p.timestamp).toLocaleDateString('pt-BR')})`).join('<br>')
                     : '-'
                 }</td>
-                <td><input type="number" step="0.01" value="${balanceValue.toFixed(2)}" id="balance-${user.userId}"></td>
-                <td><input type="date" value="${expirationValue}" id="expiration-${user.userId}"></td>
-                <td><button onclick="updateUser('${user.userId}')">Salvar</button></td>
+                <td>${balanceValue.toFixed(2)}</td>
+                <td>${expirationValue || '-'}</td>
+                <td>
+                    <button class="edit-btn" onclick="openEditModal('${user.userId}', '${user.name || ''}', ${balanceValue}, '${user.expirationDate || ''}')"><i class="fas fa-edit"></i></button>
+                    <button class="delete-btn" onclick="openCancelModal('${user.userId}', '${user.name || ''}')"><i class="fas fa-times"></i></button>
+                </td>
             `;
             tableBody.appendChild(row);
         });
@@ -186,18 +197,70 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adicionar evento de pesquisa
     searchInput.addEventListener('input', filterUsers);
 
-    // Função para atualizar usuário
-    function updateUser(userId) {
-        console.log(`Atualizando usuário ${userId}...`);
-        const balance = document.getElementById(`balance-${userId}`).value;
-        const expirationDate = document.getElementById(`expiration-${userId}`).value;
+    // Função para abrir o modal de edição
+    function openEditModal(userId, name, balance, expirationDate) {
+        currentUserId = userId;
+        editIdInput.value = userId;
+        editNameInput.value = name;
+        editBalanceInput.value = balance.toFixed(2);
+        
+        // Calcular dias restantes a partir da data de expiração
+        if (expirationDate) {
+            const expDate = new Date(expirationDate);
+            const currentDate = new Date();
+            const diffTime = expDate - currentDate;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            editDaysInput.value = diffDays > 0 ? diffDays : 0;
+        } else {
+            editDaysInput.value = 0;
+        }
 
+        editModal.style.display = 'block';
+    }
+
+    // Função para abrir o modal de cancelamento
+    function openCancelModal(userId, name) {
+        currentUserId = userId;
+        cancelNameDisplay.textContent = name;
+        cancelModal.style.display = 'block';
+    }
+
+    // Fechar modais
+    document.querySelectorAll('.modal-close, .cancel-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            editModal.style.display = 'none';
+            cancelModal.style.display = 'none';
+            currentUserId = null;
+        });
+    });
+
+    // Salvar alterações
+    document.querySelector('.save-btn').addEventListener('click', () => {
+        const name = editNameInput.value;
+        const balance = parseFloat(editBalanceInput.value);
+        const days = parseInt(editDaysInput.value);
+
+        if (!name) {
+            alert('Nome não pode estar vazio.');
+            return;
+        }
         if (isNaN(balance) || balance < 0) {
             alert('Saldo inválido. Insira um número positivo.');
             return;
         }
+        if (isNaN(days) || days < 0) {
+            alert('Dias restantes deve ser um número positivo.');
+            return;
+        }
 
-        fetch(`https://site-moneybet.onrender.com/user/${userId}`, {
+        // Calcular nova data de expiração
+        let expirationDate = null;
+        if (days > 0) {
+            const currentDate = new Date();
+            expirationDate = new Date(currentDate.setDate(currentDate.getDate() + days)).toISOString();
+        }
+
+        fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -205,12 +268,12 @@ document.addEventListener('DOMContentLoaded', () => {
             credentials: 'include',
             mode: 'cors',
             body: JSON.stringify({
-                balance: balance || null,
-                expirationDate: expirationDate || null
+                name: name,
+                balance: balance,
+                expirationDate: expirationDate
             })
         })
         .then(response => {
-            console.log('Resposta da atualização:', response.status, response.redirected);
             if (!response.ok) {
                 return response.text().then(text => {
                     throw new Error(`Erro na requisição: ${response.status} - ${response.statusText} - ${text}`);
@@ -219,16 +282,56 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
         })
         .then(data => {
-            console.log('Dados retornados da atualização:', data);
             if (data.error) throw new Error(data.error);
             alert('Dados atualizados com sucesso!');
-            loadUsers(); // Recarregar dados após atualização
+            editModal.style.display = 'none';
+            loadUsers();
         })
         .catch(error => {
             console.error('Erro ao atualizar dados:', error);
             alert('Erro ao atualizar dados: ' + error.message);
         });
-    }
+    });
+
+    // Cancelar assinatura
+    document.querySelector('.delete-btn').addEventListener('click', () => {
+        fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            mode: 'cors'
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`Erro na requisição: ${response.status} - ${response.statusText} - ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            alert('Assinatura cancelada com sucesso!');
+            cancelModal.style.display = 'none';
+            loadUsers();
+        })
+        .catch(error => {
+            console.error('Erro ao cancelar assinatura:', error);
+            alert('Erro ao cancelar assinatura: ' + error.message);
+        });
+    });
+
+    // Fechar modal ao clicar fora dele
+    window.addEventListener('click', (event) => {
+        if (event.target === editModal) {
+            editModal.style.display = 'none';
+        }
+        if (event.target === cancelModal) {
+            cancelModal.style.display = 'none';
+        }
+    });
 
     // Função para logout
     function handleLogout() {

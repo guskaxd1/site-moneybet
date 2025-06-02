@@ -4,7 +4,7 @@ const path = require('path');
 require('dotenv').config();
 const cors = require('cors');
 const session = require('express-session');
-const MongoStore = require('connect-mongo'); // Importar o MongoStore
+const MongoStore = require('connect-mongo');
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -47,15 +47,15 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-        mongoUrl: mongoUri, // Usar a mesma URI do MongoDB
-        collectionName: 'sessions', // Nome da coleção para armazenar sessões
-        ttl: 24 * 60 * 60 // Tempo de vida da sessão em segundos (24 horas)
+        mongoUrl: mongoUri,
+        collectionName: 'sessions',
+        ttl: 24 * 60 * 60
     }),
     cookie: {
-        secure: false, // Em produção, use true com HTTPS
+        secure: false,
         httpOnly: true,
         sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000 // 24 horas
+        maxAge: 24 * 60 * 60 * 1000
     }
 }));
 
@@ -174,7 +174,7 @@ app.get('/user/:userId', requireAuth, async (req, res) => {
     }
 });
 
-// Rota para atualizar saldo e data de expiração (protegida)
+// Rota para atualizar dados do usuário (protegida)
 app.put('/user/:userId', requireAuth, async (req, res) => {
     try {
         console.log(`Rota PUT /user/${req.params.userId} acessada`);
@@ -183,7 +183,7 @@ app.put('/user/:userId', requireAuth, async (req, res) => {
             db = await connectDB();
         }
         const userId = req.params.userId;
-        const { balance, expirationDate } = req.body;
+        const { name, balance, expirationDate } = req.body;
 
         if (balance !== undefined && (isNaN(balance) || balance < 0)) {
             return res.status(400).json({ error: 'Saldo deve ser um número positivo' });
@@ -192,6 +192,16 @@ app.put('/user/:userId', requireAuth, async (req, res) => {
             return res.status(400).json({ error: 'Data inválida' });
         }
 
+        // Atualizar nome na coleção registeredUsers
+        if (name) {
+            console.log(`Atualizando nome do usuário ${userId} para ${name}`);
+            await db.collection('registeredUsers').updateOne(
+                { userId: userId },
+                { $set: { name: name } }
+            );
+        }
+
+        // Atualizar saldo
         if (balance !== undefined) {
             console.log(`Atualizando saldo do usuário ${userId} para ${balance}`);
             await db.collection('userBalances').updateOne(
@@ -201,19 +211,45 @@ app.put('/user/:userId', requireAuth, async (req, res) => {
             );
         }
 
-        if (expirationDate) {
+        // Atualizar data de expiração
+        if (expirationDate !== undefined) {
             console.log(`Atualizando data de expiração do usuário ${userId} para ${expirationDate}`);
-            await db.collection('expirationDates').updateOne(
-                { userId: userId },
-                { $set: { expirationDate: new Date(expirationDate).getTime() } },
-                { upsert: true }
-            );
+            if (expirationDate === null) {
+                await db.collection('expirationDates').deleteOne({ userId: userId });
+            } else {
+                await db.collection('expirationDates').updateOne(
+                    { userId: userId },
+                    { $set: { expirationDate: new Date(expirationDate).getTime() } },
+                    { upsert: true }
+                );
+            }
         }
 
         res.json({ message: 'Dados atualizados com sucesso' });
     } catch (err) {
         console.error('Erro na rota PUT /user/:userId:', err.message);
         res.status(500).json({ error: 'Erro ao atualizar dados', details: err.message });
+    }
+});
+
+// Rota para deletar/cancelar assinatura de um usuário (protegida)
+app.delete('/user/:userId', requireAuth, async (req, res) => {
+    try {
+        console.log(`Rota DELETE /user/${req.params.userId} acessada`);
+        if (!db) {
+            console.log('Inicializando conexão com o banco de dados');
+            db = await connectDB();
+        }
+        const userId = req.params.userId;
+
+        // Remover data de expiração para cancelar assinatura
+        console.log(`Cancelando assinatura do usuário ${userId}`);
+        await db.collection('expirationDates').deleteOne({ userId: userId });
+
+        res.json({ message: 'Assinatura cancelada com sucesso' });
+    } catch (err) {
+        console.error('Erro na rota DELETE /user/:userId:', err.message);
+        res.status(500).json({ error: 'Erro ao cancelar assinatura', details: err.message });
     }
 });
 

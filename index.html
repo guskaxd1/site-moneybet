@@ -84,5 +84,60 @@
             </div>
         </main>
     </div>
+
+    <!-- Modal de Edição -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Editar Usuário</h2>
+                <span class="modal-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="modal-field">
+                    <label for="edit-id">ID Discord</label>
+                    <input type="text" id="edit-id" readonly>
+                </div>
+                <div class="modal-field">
+                    <label for="edit-name">Nome</label>
+                    <input type="text" id="edit-name">
+                </div>
+                <div class="modal-field">
+                    <label for="edit-balance">Saldo</label>
+                    <input type="number" id="edit-balance" step="0.01">
+                </div>
+                <div class="modal-field">
+                    <label for="edit-days">Dias Restantes</label>
+                    <input type="number" id="edit-days" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel-btn">Cancelar</button>
+                <button class="modal-btn save-btn">Salvar Alterações</button>
+            </ détails
+
+div>
+        </div>
+    </div>
+
+    <!-- Modal de Cancelamento/Exclusão -->
+    <div id="cancelModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header cancel-header">
+                <h2>Cancelar Assinatura</h2>
+                <span class="modal-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja cancelar a assinatura deste usuário?</p>
+                <div class="modal-field">
+                    <label>Nome</label>
+                    <p id="cancel-name"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel-btn">Cancelar</button>
+                <button class="modal-btn delete-btn">Cancelar Assinatura</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
