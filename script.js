@@ -1,6 +1,20 @@
+// Declaração de elementos DOM globais
+let editModal = null;
+let cancelModal = null;
+let editIdInput = null;
+let editNameInput = null;
+let editBalanceInput = null;
+let editDaysInput = null;
+let cancelNameDisplay = null;
+let currentUserId = null;
+
 // Funções globais para os botões de ação
 function openEditModal(userId, name, balance, expirationDate) {
     console.log('Abrindo modal de edição para:', { userId, name, balance, expirationDate });
+    if (!editModal || !editIdInput || !editNameInput || !editBalanceInput || !editDaysInput) {
+        console.error('Elementos do modal de edição não encontrados');
+        return;
+    }
     currentUserId = userId;
     editIdInput.value = userId;
     editNameInput.value = name;
@@ -17,13 +31,19 @@ function openEditModal(userId, name, balance, expirationDate) {
     }
 
     editModal.style.display = 'block';
+    console.log('Modal de edição exibido:', editModal.style.display);
 }
 
 function openCancelModal(userId, name) {
     console.log('Abrindo modal de cancelamento para:', { userId, name });
+    if (!cancelModal || !cancelNameDisplay) {
+        console.error('Elementos do modal de cancelamento não encontrados');
+        return;
+    }
     currentUserId = userId;
     cancelNameDisplay.textContent = name;
     cancelModal.style.display = 'block';
+    console.log('Modal de cancelamento exibido:', cancelModal.style.display);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -41,17 +61,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-input');
     const usersTable = document.getElementById('usersTable');
     const logoutBtn = document.getElementById('logoutBtn');
-    const editModal = document.getElementById('editModal');
-    const cancelModal = document.getElementById('cancelModal');
-    const editIdInput = document.getElementById('edit-id');
-    const editNameInput = document.getElementById('edit-name');
-    const editBalanceInput = document.getElementById('edit-balance');
-    const editDaysInput = document.getElementById('edit-days');
-    const cancelNameDisplay = document.getElementById('cancel-name');
+    editModal = document.getElementById('editModal');
+    cancelModal = document.getElementById('cancelModal');
+    editIdInput = document.getElementById('edit-id');
+    editNameInput = document.getElementById('edit-name');
+    editBalanceInput = document.getElementById('edit-balance');
+    editDaysInput = document.getElementById('edit-days');
+    cancelNameDisplay = document.getElementById('cancel-name');
     const loadingDiv = document.getElementById('loading');
     const errorDiv = document.getElementById('error');
     let allUsers = []; // Armazenar todos os usuários para pesquisa
-    let currentUserId = null;
 
     // Alternar menu em telas menores
     menuToggle.addEventListener('click', () => {
@@ -207,6 +226,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
             const balanceValue = user.balance || 0;
             const expirationValue = user.expirationDate ? new Date(user.expirationDate).toISOString().split('T')[0] : '';
+            // Escapar aspas no nome para evitar quebras no onclick
+            const escapedName = (user.name || '').replace(/'/g, "\\'");
             row.innerHTML = `
                 <td>${user.userId || '-'}</td>
                 <td>${user.name || '-'}</td>
@@ -220,8 +241,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${balanceValue.toFixed(2)}</td>
                 <td>${expirationValue || '-'}</td>
                 <td>
-                    <button class="edit-btn" onclick="openEditModal('${user.userId}', '${user.name || ''}', ${balanceValue}, '${user.expirationDate || ''}')"><i class="fas fa-edit"></i></button>
-                    <button class="delete-btn" onclick="openCancelModal('${user.userId}', '${user.name || ''}')"><i class="fas fa-times"></i></button>
+                    <button class="edit-btn" onclick="openEditModal('${user.userId}', '${escapedName}', ${balanceValue}, '${user.expirationDate || ''}')"><i class="fas fa-edit"></i></button>
+                    <button class="delete-btn" onclick="openCancelModal('${user.userId}', '${escapedName}')"><i class="fas fa-times"></i></button>
                 </td>
             `;
             tableBody.appendChild(row);
@@ -244,8 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fechar modais
     document.querySelectorAll('.modal-close, .cancel-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            editModal.style.display = 'none';
-            cancelModal.style.display = 'none';
+            if (editModal) editModal.style.display = 'none';
+            if (cancelModal) cancelModal.style.display = 'none';
             currentUserId = null;
         });
     });
