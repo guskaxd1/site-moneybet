@@ -39,7 +39,7 @@ function updateDaysRemaining(expirationDate) {
         console.error('Erro: editDaysRemainingInput não encontrado');
         return;
     }
-    const currentDate = new Date('2025-06-03T00:10:00-03:00'); // 12:10 AM -03, June 03, 2025
+    const currentDate = new Date('2025-06-03T00:15:00-03:00'); // 12:15 AM -03, June 03, 2025
     const diffTime = new Date(expirationDate) - currentDate;
     const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     editDaysRemainingInput.value = daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
@@ -132,7 +132,11 @@ document.addEventListener('DOMContentLoaded', () => {
             mode: 'cors'
         })
         .then(response => {
-            console.log('Resposta do servidor:', response.status, response.statusText);
+            console.log('Resposta do servidor para Dashboard:', {
+                status: response.status,
+                statusText: response.statusText,
+                headers: Object.fromEntries(response.headers.entries())
+            });
             if (!response.ok) {
                 throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
             }
@@ -145,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
         })
         .then(users => {
+            console.log('Dados brutos recebidos:', users);
             hideLoading();
             if (!users || !Array.isArray(users)) {
                 console.warn('Dados inválidos ou ausentes:', users);
@@ -175,7 +180,11 @@ document.addEventListener('DOMContentLoaded', () => {
             mode: 'cors'
         })
         .then(response => {
-            console.log('Resposta do servidor:', response.status, response.statusText);
+            console.log('Resposta do servidor para Usuários:', {
+                status: response.status,
+                statusText: response.statusText,
+                headers: Object.fromEntries(response.headers.entries())
+            });
             if (!response.ok) {
                 throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
             }
@@ -188,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
         })
         .then(users => {
+            console.log('Dados brutos recebidos:', users);
             hideLoading();
             if (!users || !Array.isArray(users)) {
                 console.warn('Nenhum usuário encontrado ou dados inválidos:', users);
@@ -212,12 +222,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Função para atualizar estatísticas no painel
     function updateDashboardStats(users) {
         const totalUsers = users.length;
-        const totalBalance = users.reduce((sum, user) => {
-            const balance = parseFloat(user.balance) || 0;
-            console.log(`Usuário ${user.userId || 'sem ID'}: Saldo = ${balance}`);
-            return sum + balance;
-        }, 0);
-        const currentDate = new Date('2025-06-03T00:10:00-03:00'); // 12:10 AM -03, June 03, 2025
+        let totalBalance = 0;
+        users.forEach(user => {
+            const balance = parseFloat(user.balance);
+            if (isNaN(balance)) {
+                console.warn(`Saldo inválido para usuário ${user.userId || 'sem ID'}:`, user.balance);
+            } else {
+                totalBalance += balance;
+            }
+        });
+        const currentDate = new Date('2025-06-03T00:15:00-03:00'); // 12:15 AM -03, June 03, 2025
         const activeSubscriptions = users.filter(user => {
             if (!user.expirationDate) return false;
             const expiration = new Date(user.expirationDate);
@@ -315,16 +329,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            console.log('Salvando alterações para:', { userId: currentUserId, name, balance, expirationDate });
+            const requestBody = { name, balance, expirationDate };
+            console.log('Enviando atualização para o servidor:', { userId: currentUserId, requestBody });
             fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 mode: 'cors',
-                body: JSON.stringify({ name, balance, expirationDate })
+                body: JSON.stringify(requestBody)
             })
             .then(response => {
-                console.log('Resposta do servidor ao salvar:', response.status, response.statusText);
+                console.log('Resposta do servidor ao salvar:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
                 if (!response.ok) {
                     return response.text().then(text => {
                         throw new Error(`Erro: ${response.status} - ${text || response.statusText}`);
@@ -333,6 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return response.json();
             })
             .then(data => {
+                console.log('Dados retornados após salvar:', data);
                 if (data.error) throw new Error(data.error);
                 alert('Sucesso: Dados atualizados!');
                 editModal.style.display = 'none';
