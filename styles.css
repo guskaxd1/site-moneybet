@@ -76,20 +76,17 @@ body {
     background-color: #34495e;
 }
 
-/* Botão de menu para todas as resoluções */
+/* Botão de menu integrado ao header */
 .menu-toggle {
     display: block; /* Sempre visível */
-    position: fixed;
-    top: 10px;
-    left: 10px;
     background: #2c3e50;
     color: #ecf0f1;
     border: none;
     padding: 10px;
     font-size: 20px;
     cursor: pointer;
-    z-index: 1001;
     border-radius: 4px;
+    margin-right: 15px; /* Espaço entre o botão e o título */
 }
 
 .menu-toggle:hover {
@@ -112,10 +109,14 @@ header {
     margin-bottom: 20px;
     flex-wrap: wrap;
     gap: 10px;
+    position: relative;
 }
 
 header h1 {
     font-size: 24px;
+    text-align: center;
+    flex-grow: 1; /* Permite que o título ocupe o espaço central */
+    margin: 0; /* Remove margens padrão */
 }
 
 .logout-btn {
@@ -489,16 +490,36 @@ tr:hover {
         font-size: 12px;
         margin-right: 2px;
     }
+
+    .menu-toggle {
+        padding: 8px;
+        font-size: 18px;
+    }
 }
 
 @media (max-width: 480px) {
     header {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row; /* Mantém os elementos na mesma linha */
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 10px;
+    }
+
+    header h1 {
+        font-size: 18px;
+        flex-grow: 1;
+        text-align: center;
     }
 
     .logout-btn {
-        align-self: flex-end;
+        padding: 6px 12px;
+        font-size: 10px;
+    }
+
+    .menu-toggle {
+        padding: 6px;
+        font-size: 16px;
+        margin-right: 10px;
     }
 
     .panel-card p {
