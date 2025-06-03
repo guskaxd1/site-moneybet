@@ -22,9 +22,21 @@ function openEditModal(userId, name, balance, expirationDate) {
     editBalanceInput.value = (balance || 0).toFixed(2);
     
     if (expirationDate) {
-        const expDate = new Date(expirationDate);
-        editExpirationInput.value = expDate.toISOString().split('T')[0];
-        updateDaysRemaining(expDate);
+        try {
+            const expDate = new Date(expirationDate);
+            if (isNaN(expDate.getTime())) {
+                console.warn('Data de expiração inválida ao abrir modal:', expirationDate);
+                editExpirationInput.value = '';
+                editDaysRemainingInput.value = '0 dias';
+            } else {
+                editExpirationInput.value = expDate.toISOString().split('T')[0];
+                updateDaysRemaining(expDate);
+            }
+        } catch (err) {
+            console.error('Erro ao parsear expirationDate no modal:', err.message, { expirationDate });
+            editExpirationInput.value = '';
+            editDaysRemainingInput.value = '0 dias';
+        }
     } else {
         editExpirationInput.value = '';
         editDaysRemainingInput.value = '0 dias';
@@ -39,7 +51,7 @@ function updateDaysRemaining(expirationDate) {
         console.error('Erro: editDaysRemainingInput não encontrado');
         return;
     }
-    const currentDate = new Date('2025-06-03T01:03:00-03:00'); // 01:03 AM -03, June 03, 2025
+    const currentDate = new Date('2025-06-03T01:25:00-03:00'); // 01:25 AM -03, June 03, 2025
     const diffTime = new Date(expirationDate) - currentDate;
     const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     editDaysRemainingInput.value = daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
@@ -231,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 totalBalance += balance;
             }
         });
-        const currentDate = new Date('2025-06-03T01:03:00-03:00'); // 01:03 AM -03, June 03, 2025
+        const currentDate = new Date('2025-06-03T01:25:00-03:00'); // 01:25 AM -03, June 03, 2025
         const activeSubscriptions = users.filter(user => {
             if (!user.expirationDate) return false;
             const expiration = new Date(user.expirationDate);
@@ -318,7 +330,24 @@ document.addEventListener('DOMContentLoaded', () => {
         saveBtn.addEventListener('click', () => {
             const name = editNameInput.value.trim();
             const balance = parseFloat(editBalanceInput.value);
-            const expirationDate = editExpirationInput.value ? new Date(editExpirationInput.value).toISOString() : null;
+            let expirationDate = null;
+
+            if (editExpirationInput.value) {
+                try {
+                    const parsedDate = new Date(editExpirationInput.value);
+                    if (isNaN(parsedDate.getTime())) {
+                        console.warn('Data de expiração inválida ao salvar:', editExpirationInput.value);
+                        alert('Erro: Data de expiração inválida.');
+                        return;
+                    }
+                    expirationDate = parsedDate.toISOString();
+                    console.log('Data de expiração formatada:', expirationDate);
+                } catch (err) {
+                    console.error('Erro ao parsear data de expiração ao salvar:', err.message);
+                    alert('Erro: Formato de data inválido.');
+                    return;
+                }
+            }
 
             if (!name) {
                 alert('Erro: Nome não pode estar vazio.');

@@ -143,10 +143,19 @@ app.put('/user/:userId', async (req, res) => {
             return res.status(400).json({ error: 'Saldo deve ser um número positivo' });
         }
 
-        // Relaxar validação de expirationDate para aceitar null ou string válida
-        if (expirationDate !== undefined && expirationDate !== null && isNaN(Date.parse(expirationDate))) {
-            console.warn('Validação falhou: Data de expiração inválida');
-            return res.status(400).json({ error: 'Data de expiração inválida' });
+        // Melhorar validação de expirationDate
+        let parsedExpirationDate = null;
+        if (expirationDate !== undefined && expirationDate !== null) {
+            try {
+                parsedExpirationDate = new Date(expirationDate);
+                if (isNaN(parsedExpirationDate.getTime())) {
+                    console.warn('Validação falhou: Data de expiração inválida', { expirationDate });
+                    return res.status(400).json({ error: 'Data de expiração inválida' });
+                }
+            } catch (err) {
+                console.warn('Erro ao parsear expirationDate:', err.message, { expirationDate });
+                return res.status(400).json({ error: 'Formato de data inválido' });
+            }
         }
 
         // Atualizar nome na coleção registeredUsers
@@ -180,7 +189,7 @@ app.put('/user/:userId', async (req, res) => {
             } else {
                 const result = await db.collection('expirationDates').updateOne(
                     { userId: userId },
-                    { $set: { expirationDate: new Date(expirationDate).toISOString() } },
+                    { $set: { expirationDate: parsedExpirationDate.toISOString() } },
                     { upsert: true }
                 );
                 console.log('Resultado da atualização de data de expiração:', result);
