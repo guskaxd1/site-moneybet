@@ -87,6 +87,55 @@ function openCancelModal(userId, name) {
     cancelNameDisplay.textContent = name || '-';
     cancelModal.style.display = 'block';
     console.log('Modal de cancelamento exibido');
+
+    // Associar o evento ao botão "Cancelar Assinatura" no modal
+    const cancelSubscriptionBtn = document.querySelector('#cancelModal .modal-footer .delete-btn');
+    if (cancelSubscriptionBtn) {
+        // Remover qualquer listener anterior para evitar múltiplos eventos
+        const newBtn = cancelSubscriptionBtn.cloneNode(true);
+        cancelSubscriptionBtn.parentNode.replaceChild(newBtn, cancelSubscriptionBtn);
+        
+        newBtn.addEventListener('click', () => {
+            console.log('Botão "Cancelar Assinatura" clicado para userId:', currentUserId);
+            if (!currentUserId) {
+                console.error('Erro: currentUserId não definido');
+                alert('Erro: ID do usuário não encontrado.');
+                return;
+            }
+            fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                mode: 'cors'
+            })
+            .then(response => {
+                console.log('Resposta do servidor ao deletar:', {
+                    status: response.status,
+                    statusText: response.statusText
+                });
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`Erro: ${response.status} - ${text || response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                console.log('Resposta do servidor:', data);
+                alert('Sucesso: Assinatura cancelada!');
+                cancelModal.style.display = 'none';
+                loadUsers();
+            })
+            .catch(error => {
+                console.error('Erro ao cancelar assinatura:', error);
+                alert(`Erro ao cancelar assinatura: ${error.message}`);
+            });
+        });
+        console.log('Evento de clique associado ao botão "Cancelar Assinatura"');
+    } else {
+        console.error('Erro: Botão "Cancelar Assinatura" no modal não encontrado');
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -415,44 +464,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     } else {
         console.error('Erro: Botão "Salvar Alterações" não encontrado');
-    }
-
-    // Cancelar assinatura
-    const cancelSubscriptionBtn = document.querySelector('.modal-footer .delete-btn'); // Selecionar o botão no modal
-    if (cancelSubscriptionBtn) {
-        cancelSubscriptionBtn.addEventListener('click', () => {
-            console.log('Cancelando assinatura para:', currentUserId);
-            fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                mode: 'cors'
-            })
-            .then(response => {
-                console.log('Resposta do servidor ao deletar:', {
-                    status: response.status,
-                    statusText: response.statusText
-                });
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        throw new Error(`Erro: ${response.status} - ${text || response.statusText}`);
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.error) throw new Error(data.error);
-                alert('Sucesso: Assinatura cancelada!');
-                cancelModal.style.display = 'none';
-                loadUsers();
-            })
-            .catch(error => {
-                console.error('Erro ao cancelar assinatura:', error);
-                alert(`Erro ao cancelar assinatura: ${error.message}`);
-            });
-        });
-    } else {
-        console.error('Erro: Botão "Cancelar Assinatura" no modal não encontrado');
     }
 
     // Fechar modal ao clicar fora dele

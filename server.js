@@ -219,14 +219,19 @@ app.delete('/user/:userId', async (req, res) => {
     try {
         console.log(`Rota DELETE /user/${req.params.userId} acessada`);
         db = await ensureDBConnection();
-        const userId = req.params.userId;
+        const userId = req.params.userId.toString(); // Garantir que userId seja string
 
         console.log(`Cancelando assinatura do usuário ${userId}`);
         const result = await db.collection('expirationDates').deleteOne({ userId: userId });
-        console.log('Resultado da exclusão de data de expiração:', result);
+        console.log('Resultado da exclusão de data de expiração:', { deletedCount: result.deletedCount });
+
+        if (result.deletedCount === 0) {
+            console.warn(`Nenhum documento encontrado para userId ${userId} na coleção expirationDates`);
+            return res.status(404).json({ message: 'Nenhuma assinatura encontrada para cancelar' });
+        }
 
         res.setHeader('Content-Type', 'application/json');
-        res.json({ message: 'Assinatura cancelada com sucesso' });
+        res.json({ message: 'Assinatura cancelada com sucesso', deletedCount: result.deletedCount });
     } catch (err) {
         console.error('Erro na rota DELETE /user/:userId:', err.message);
         res.status(500).json({ error: 'Erro ao cancelar assinatura', details: err.message });
