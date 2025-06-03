@@ -3,68 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MoneyBet</title>
+    <title>MoneyBet Admin Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="styles.css">
-    <script src="script.js" defer></script>
 </head>
 <body>
-    <div class="layout">
-        <!-- Botão de menu para mobile -->
-        <button class="menu-toggle">
-            <i class="fas fa-bars"></i>
-        </button>
-
-        <!-- Menu Lateral -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>MoneyBet</h2>
-            </div>
-            <nav class="sidebar-nav">
-                <ul>
-                    <li><h3>PAINEL</h3></li>
-                    <li><a href="#" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                    <li><h3>CONTROLES</h3></li>
-                    <li><a href="#"><i class="fas fa-users"></i> Usuários</a></li>
-                    <li><a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-                </ul>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 d-none d-md-block sidebar">
+                <div class="sidebar-sticky">
+                    <h4 class="sidebar-heading">MoneyBet</h4>
+                    <ul class="nav flex-column sidebar-nav">
+                        <li class="nav-item"><a class="nav-link active" href="#">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#">Usuários</a></li>
+                        <li class="nav-item"><a class="nav-link" id="logout" href="#">Sair</a></li>
+                    </ul>
+                </div>
             </nav>
-        </aside>
-
-        <!-- Conteúdo Principal -->
-        <main class="main-content">
-            <header>
-                <h1>Dashboard de Assinaturas</h1>
-                <button class="logout-btn" id="logoutBtn">Sair</button>
-            </header>
-            <div class="container">
-                <!-- Painel Administrativo -->
-                <div class="admin-panel">
-                    <div class="panel-card">
-                        <h3>Total de Usuários</h3>
-                        <p id="total-users">0</p>
+            <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Dashboard</h1>
+                    <button class="menu-toggle btn btn-outline-secondary d-md-none">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+                <div id="dashboard-stats" class="row">
+                    <div class="col-md-3">
+                        <div class="card text-white bg-primary mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Total de Usuários</h5>
+                                <p class="card-text" id="total-users">0</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="panel-card">
-                        <h3>Saldo Total (R$)</h3>
-                        <p id="total-balance">0.00</p>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-success mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Saldo Total</h5>
+                                <p class="card-text" id="total-balance">0.00</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="panel-card">
-                        <h3>Assinaturas Ativas</h3>
-                        <p id="active-subscriptions">0</p>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-info mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Assinaturas Ativas</h5>
+                                <p class="card-text" id="active-subscriptions">0</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="panel-card">
-                        <h3>Assinaturas Vencidas</h3>
-                        <p id="expired-subscriptions">0</p>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-danger mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Assinaturas Expiradas</h5>
+                                <p class="card-text" id="expired-subscriptions">0</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Pesquisa (apenas na aba Usuários) -->
-                <div id="search-container" style="display: none; margin-bottom: 20px;">
-                    <input type="text" id="search-input" placeholder="🔎Pesquisar por ID ou Nome" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <div id="search-container" style="display: none;">
+                    <div class="form-group">
+                        <input type="text" id="search-input" class="form-control" placeholder="Pesquisar por ID ou Nome">
+                    </div>
                 </div>
-
-                <!-- Tabela de Usuários -->
-                <table id="usersTable" style="display: none;">
+                <div id="loading" style="display: none;">
+                    <div class="spinner-border" role="status">
+                        <span class="sr-only">Carregando...</span>
+                    </div>
+                </div>
+                <div id="error" class="alert alert-danger" style="display: none;"></div>
+                <table id="usersTable" class="table table-striped" style="display: none;">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -78,71 +87,77 @@
                             <th>Ações</th>
                         </tr>
                     </thead>
-                    <tbody id="usersTableBody">
-                        <!-- Conteúdo gerado dinamicamente -->
-                    </tbody>
+                    <tbody id="usersTableBody"></tbody>
                 </table>
-                <div id="loading" style="display: none; text-align: center; padding: 20px;">Carregando...</div>
-                <div id="error" style="display: none; text-align: center; color: red; padding: 20px;"></div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
 
     <!-- Modal de Edição -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Editar Usuário</h2>
-                <span class="modal-close">×</span>
-            </div>
-            <div class="modal-body">
-                <div class="modal-field">
-                    <label for="edit-id">ID Discord</label>
-                    <input type="text" id="edit-id" readonly>
+    <div class="modal fade" id="editModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Usuário</h5>
+                    <button type="button" class="close modal-close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
                 </div>
-                <div class="modal-field">
-                    <label for="edit-name">Nome</label>
-                    <input type="text" id="edit-name">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="edit-id">ID</label>
+                        <input type="text" class="form-control" id="edit-id" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-name">Nome</label>
+                        <input type="text" class="form-control" id="edit-name">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-balance">Saldo</label>
+                        <input type="number" class="form-control" id="edit-balance" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-expiration">Data de Expiração</label>
+                        <input type="date" class="form-control" id="edit-expiration">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-days-remaining">Dias Restantes</label>
+                        <input type="text" class="form-control" id="edit-days-remaining" readonly>
+                    </div>
                 </div>
-                <div class="modal-field">
-                    <label for="edit-balance">Saldo</label>
-                    <input type="number" id="edit-balance" step="0.01">
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary cancel-btn" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary save-btn">Salvar Alterações</button>
                 </div>
-                <div class="modal-field">
-                    <label for="edit-expiration">Data de Expiração</label>
-                    <input type="date" id="edit-expiration">
-                </div>
-                <div class="modal-field">
-                    <label for="edit-days-remaining">Dias Restantes</label>
-                    <input type="text" id="edit-days-remaining" readonly>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="modal-btn cancel-btn">Cancelar</button>
-                <button class="modal-btn save-btn">Salvar Alterações</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal de Cancelamento/Exclusão -->
-    <div id="cancelModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header cancel-header">
-                <h2>Cancelar Assinatura</h2>
-                <span class="modal-close">×</span>
-            </div>
-            <div class="modal-body">
-                <p>Tem certeza que deseja cancelar a assinatura deste usuário?</p>
-                <div class="modal-field">
-                    <label>Nome</label>
-                    <p id="cancel-name"></p>
+    <!-- Modal de Cancelamento -->
+    <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cancelar Assinatura</h5>
+                    <button type="button" class="close modal-close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button class="modal-btn cancel-btn">Cancelar</button>
-                <button class="modal-btn delete-btn">Cancelar Assinatura</button>
+                <div class="modal-body">
+                    <p>Tem certeza que deseja cancelar a assinatura de <strong id="cancel-name"></strong>?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary cancel-btn" data-dismiss="modal">Não</button>
+                    <button type="button" class="btn btn-danger delete-btn">Cancelar Assinatura</button>
+                    <button type="button" class="btn btn-danger delete-all-btn">Excluir Todos os Dados</button>
+                </div>
             </div>
         </div>
     </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

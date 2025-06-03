@@ -219,7 +219,7 @@ app.delete('/user/:userId', async (req, res) => {
     try {
         console.log(`Rota DELETE /user/${req.params.userId} acessada`);
         db = await ensureDBConnection();
-        const userId = req.params.userId.toString().trim(); // Garantir que userId seja string e sem espaços
+        const userId = req.params.userId.toString().trim();
 
         if (!userId) {
             console.error('Erro: userId inválido ou vazio');
@@ -227,16 +227,59 @@ app.delete('/user/:userId', async (req, res) => {
         }
 
         console.log(`Cancelando assinatura do usuário ${userId}`);
-        // Verificar se o documento existe antes de deletar
-        const existingDoc = await db.collection('expirationDates').findOne({ userId: userId });
-        console.log('Documento encontrado antes da exclusão:', existingDoc);
 
-        const result = await db.collection('expirationDates').deleteOne({ userId: userId });
+        // Listar todos os documentos na coleção expirationDates para depuração
+        const allExpirationDocs = await db.collection('expirationDates').find().toArray();
+        console.log('Todos os documentos na coleção expirationDates:', allExpirationDocs);
+
+        // Tentar encontrar o documento como string
+        let existingDoc = await db.collection('expirationDates').findOne({ userId: userId });
+        console.log('Documento encontrado como string:', existingDoc);
+
+        // Se não encontrado, tentar como número
+        if (!existingDoc) {
+            const userIdAsNumber = parseInt(userId);
+            if (!isNaN(userIdAsNumber)) {
+                existingDoc = await db.collection('expirationDates').findOne({ userId: userIdAsNumber });
+                console.log('Documento encontrado como número:', existingDoc);
+            }
+        }
+
+        // Se não encontrado, tentar com ObjectId (pouco provável, mas para cobrir todos os casos)
+        if (!existingDoc) {
+            try {
+                existingDoc = await db.collection('expirationDates').findOne({ userId: new ObjectId(userId) });
+                console.log('Documento encontrado como ObjectId:', existingDoc);
+            } catch (err) {
+                console.log('Não é um ObjectId válido:', err.message);
+            }
+        }
+
+        if (!existingDoc) {
+            console.warn(`Nenhum documento encontrado para userId ${userId} na coleção expirationDates`);
+            return res.status(404).json({ message: 'Nenhuma assinatura encontrada para cancelar' });
+        }
+
+        // Determinar o tipo do userId no documento encontrado
+        const userIdInDoc = existingDoc.userId;
+        let deleteQuery;
+        if (typeof userIdInDoc === 'string') {
+            deleteQuery = { userId: userId };
+        } else if (typeof userIdInDoc === 'number') {
+            deleteQuery = { userId: parseInt(userId) };
+        } else if (userIdInDoc instanceof ObjectId) {
+            deleteQuery = { userId: new ObjectId(userId) };
+        } else {
+            console.error('Tipo de userId desconhecido no documento:', typeof userIdInDoc);
+            return res.status(500).json({ error: 'Erro interno: Tipo de userId desconhecido' });
+        }
+
+        const result = await db.collection('expirationDates').deleteOne(deleteQuery);
         console.log('Resultado da exclusão de data de expiração:', { deletedCount: result.deletedCount });
 
         if (result.deletedCount === 0) {
-            console.warn(`Nenhum documento encontrado para userId ${userId} na coleção expirationDates`);
-            return res.status(404).json({ message: 'Nenhuma assinatura encontrada para cancelar' });
+            console.warn(`Falha ao excluir documento para userId ${userId} na coleção expirationDates`);
+            return res.status(500).json({ message: 'Falha ao cancelar a assinatura' });
         }
 
         res.setHeader('Content-Type', 'application/json');
@@ -244,6 +287,86 @@ app.delete('/user/:userId', async (req, res) => {
     } catch (err) {
         console.error('Erro na rota DELETE /user/:userId:', err.message);
         res.status(500).json({ error: 'Erro ao cancelar assinatura', details: err.message });
+    }
+});
+
+// Rota para deletar todos os dados de um usuário (sem autenticação)
+app.delete('/user/:userId/all', async (req, res) => {
+    try {
+        console.log(`Rota DELETE /user/${req.params.userId}/all acessada`);
+        db = await ensureDBConnection();
+        const userId = req.params.userId.toString().trim();
+
+        if (!userId) {
+            console.error('Erro: userId inválido ou vazio');
+            return res.status(400).json({ error: 'ID do usuário inválido ou vazio' });
+        }
+
+        console.log(`Excluindo todos os dados do usuário ${userId}`);
+
+        // Listar documentos em todas as coleções para depuração
+        const allExpirationDocs = await db.collection('expirationDates').find().toArray();
+        const allRegisteredDocs = await db.collection('registeredUsers').find().toArray();
+        const allBalanceDocs = await db.collection('userBalances').find().toArray();
+        console.log('Documentos na coleção expirationDates:', allExpirationDocs);
+        console.log('Documentos na coleção registeredUsers:', allRegisteredDocs);
+        console.log('Documentos na coleção userBalances:', allBalanceDocs);
+
+        // Tentar encontrar o documento principal (registeredUsers) para determinar o tipo de userId
+        let userDoc = await db.collection('registeredUsers').findOne({ userId: userId });
+        if (!userDoc) {
+            const userIdAsNumber = parseInt(userId);
+            if (!isNaN(userIdAsNumber)) {
+                userDoc = await db.collection('registeredUsers').findOne({ userId: userIdAsNumber });
+            }
+        }
+        if (!userDoc) {
+            try {
+                userDoc = await db.collection('registeredUsers').findOne({ userId: new ObjectId(userId) });
+            } catch (err) {
+                console.log('Não é um ObjectId válido:', err.message);
+            }
+        }
+
+        if (!userDoc) {
+            console.warn(`Nenhum usuário encontrado para userId ${userId} na coleção registeredUsers`);
+            return res.status(404).json({ message: 'Usuário não encontrado' });
+        }
+
+        const userIdInDoc = userDoc.userId;
+        let deleteQuery;
+        if (typeof userIdInDoc === 'string') {
+            deleteQuery = { userId: userId };
+        } else if (typeof userIdInDoc === 'number') {
+            deleteQuery = { userId: parseInt(userId) };
+        } else if (userIdInDoc instanceof ObjectId) {
+            deleteQuery = { userId: new ObjectId(userId) };
+        } else {
+            console.error('Tipo de userId desconhecido no documento:', typeof userIdInDoc);
+            return res.status(500).json({ error: 'Erro interno: Tipo de userId desconhecido' });
+        }
+
+        // Excluir de todas as coleções
+        const expirationResult = await db.collection('expirationDates').deleteOne(deleteQuery);
+        const balanceResult = await db.collection('userBalances').deleteOne(deleteQuery);
+        const registeredResult = await db.collection('registeredUsers').deleteOne(deleteQuery);
+
+        console.log('Resultado da exclusão de expirationDates:', { deletedCount: expirationResult.deletedCount });
+        console.log('Resultado da exclusão de userBalances:', { deletedCount: balanceResult.deletedCount });
+        console.log('Resultado da exclusão de registeredUsers:', { deletedCount: registeredResult.deletedCount });
+
+        const totalDeleted = expirationResult.deletedCount + balanceResult.deletedCount + registeredResult.deletedCount;
+
+        if (totalDeleted === 0) {
+            console.warn(`Nenhum dado excluído para userId ${userId}`);
+            return res.status(404).json({ message: 'Nenhum dado encontrado para excluir' });
+        }
+
+        res.setHeader('Content-Type', 'application/json');
+        res.json({ message: 'Todos os dados do usuário foram excluídos com sucesso', totalDeleted });
+    } catch (err) {
+        console.error('Erro na rota DELETE /user/:userId/all:', err.message);
+        res.status(500).json({ error: 'Erro ao excluir todos os dados', details: err.message });
     }
 });
 
