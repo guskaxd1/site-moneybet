@@ -51,11 +51,30 @@ function updateDaysRemaining(expirationDate) {
         console.error('Erro: editDaysRemainingInput não encontrado');
         return;
     }
-    const currentDate = new Date('2025-06-03T01:31:00-03:00'); // 01:31 AM -03, June 03, 2025
+    const currentDate = new Date('2025-06-03T01:38:00-03:00'); // 01:38 AM -03, June 03, 2025
     const diffTime = new Date(expirationDate) - currentDate;
     const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     editDaysRemainingInput.value = daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
     console.log('Dias restantes calculados:', editDaysRemainingInput.value);
+}
+
+// Função para calcular dias restantes para a tabela
+function calculateDaysRemaining(expirationDate) {
+    if (!expirationDate) return '0 dias';
+    try {
+        const expDate = new Date(expirationDate);
+        if (isNaN(expDate.getTime())) {
+            console.warn('Data de expiração inválida na tabela:', expirationDate);
+            return '0 dias';
+        }
+        const currentDate = new Date('2025-06-03T01:38:00-03:00'); // 01:38 AM -03, June 03, 2025
+        const diffTime = expDate - currentDate;
+        const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
+    } catch (err) {
+        console.error('Erro ao calcular dias restantes na tabela:', err.message, { expirationDate });
+        return '0 dias';
+    }
 }
 
 function openCancelModal(userId, name) {
@@ -213,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
             hideLoading();
             if (!users || !Array.isArray(users)) {
                 console.warn('Nenhum usuário encontrado ou dados inválidos:', users);
-                tableBody.innerHTML = '<tr><td colspan="8">Nenhum usuário encontrado.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário encontrado.</td></tr>';
                 updateDashboardStats([]);
                 return;
             }
@@ -225,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(error => {
             hideLoading();
             console.error('Erro ao carregar Usuários:', error);
-            tableBody.innerHTML = `<tr><td colspan="8">Erro: ${error.message}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="9">Erro: ${error.message}</td></tr>`;
             updateDashboardStats([]);
             showError(`Erro ao carregar usuários: ${error.message}`);
         });
@@ -243,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 totalBalance += balance;
             }
         });
-        const currentDate = new Date('2025-06-03T01:31:00-03:00'); // 01:31 AM -03, June 03, 2025
+        const currentDate = new Date('2025-06-03T01:38:00-03:00'); // 01:38 AM -03, June 03, 2025
         const activeSubscriptions = users.filter(user => {
             if (!user.expirationDate) return false;
             const expiration = new Date(user.expirationDate);
@@ -270,6 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const balanceValue = parseFloat(user.balance) || 0;
             const expirationDate = user.expirationDate ? new Date(user.expirationDate) : null;
             const expirationValue = expirationDate ? expirationDate.toLocaleDateString('pt-BR') : '-';
+            const daysRemaining = calculateDaysRemaining(user.expirationDate);
             row.innerHTML = `
                 <td>${user.userId || '-'}</td>
                 <td>${user.name || '-'}</td>
@@ -278,6 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0 ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${new Date(p.timestamp).toLocaleDateString('pt-BR')})`).join('<br>') : '-'}</td>
                 <td>${balanceValue.toFixed(2)}</td>
                 <td>${expirationValue}</td>
+                <td>${daysRemaining}</td>
                 <td>
                     <button class="edit-btn" onclick="openEditModal('${user.userId || ''}', '${(user.name || '').replace(/'/g, "\\'")}', ${balanceValue}, '${user.expirationDate || ''}')"><i class="fas fa-edit"></i></button>
                     <button class="delete-btn" onclick="openCancelModal('${user.userId || ''}', '${(user.name || '').replace(/'/g, "\\'")}')"><i class="fas fa-times"></i></button>
