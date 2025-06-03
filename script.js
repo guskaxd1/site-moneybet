@@ -4,14 +4,15 @@ let cancelModal = null;
 let editIdInput = null;
 let editNameInput = null;
 let editBalanceInput = null;
-let editDaysInput = null;
+let editExpirationInput = null;
+let editDaysRemainingInput = null;
 let cancelNameDisplay = null;
 let currentUserId = null;
 
 // Funções globais para os botões de ação
 function openEditModal(userId, name, balance, expirationDate) {
     console.log('Abrindo modal de edição para:', { userId, name, balance, expirationDate });
-    if (!editModal || !editIdInput || !editNameInput || !editBalanceInput || !editDaysInput) {
+    if (!editModal || !editIdInput || !editNameInput || !editBalanceInput || !editExpirationInput || !editDaysRemainingInput) {
         console.error('Elementos do modal de edição não encontrados');
         return;
     }
@@ -20,20 +21,29 @@ function openEditModal(userId, name, balance, expirationDate) {
     editNameInput.value = name;
     editBalanceInput.value = balance.toFixed(2);
     
-    let daysRemaining = 0;
+    // Set expiration date
     if (expirationDate) {
         const expDate = new Date(expirationDate);
-        const currentDate = new Date();
-        const diffTime = expDate - currentDate;
-        daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        daysRemaining = daysRemaining > 0 ? daysRemaining : 0;
+        editExpirationInput.value = expDate.toISOString().split('T')[0];
+        updateDaysRemaining(expDate);
+    } else {
+        editExpirationInput.value = '';
+        editDaysRemainingInput.value = '0 dias';
     }
-    // Set initial value and mark as not manually edited
-    editDaysInput.value = daysRemaining;
-    editDaysInput.dataset.manuallyEdited = 'false';
 
     editModal.style.display = 'block';
     console.log('Modal de edição exibido:', editModal.style.display);
+}
+
+function updateDaysRemaining(expirationDate) {
+    if (!editDaysRemainingInput) {
+        console.error('editDaysRemainingInput não encontrado');
+        return;
+    }
+    const currentDate = new Date();
+    const diffTime = new Date(expirationDate) - currentDate;
+    const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    editDaysRemainingInput.value = daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
 }
 
 function openCancelModal(userId, name) {
@@ -68,7 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
     editIdInput = document.getElementById('edit-id');
     editNameInput = document.getElementById('edit-name');
     editBalanceInput = document.getElementById('edit-balance');
-    editDaysInput = document.getElementById('edit-days');
+    editExpirationInput = document.getElementById('edit-expiration');
+    editDaysRemainingInput = document.getElementById('edit-days-remaining');
     cancelNameDisplay = document.getElementById('cancel-name');
     const loadingDiv = document.getElementById('loading');
     const errorDiv = document.getElementById('error');
@@ -228,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
             const balanceValue = user.balance || 0;
             const expirationDate = user.expirationDate ? new Date(user.expirationDate) : null;
-            const expirationValue = expirationDate ? expirationDate.toISOString().split('T')[0] : '-';
+            const expirationValue = expirationDate ? expirationDate.toLocaleDateString('pt-BR') : '-';
             row.innerHTML = `
                 <td>${user.userId || '-'}</td>
                 <td>${user.name || '-'}</td>
@@ -263,9 +274,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adicionar evento de pesquisa
     searchInput.addEventListener('input', filterUsers);
 
-    // Detectar edição manual no campo de dias
-    editDaysInput.addEventListener('input', () => {
-        editDaysInput.dataset.manuallyEdited = 'true';
+    // Atualizar dias restantes ao mudar a data de expiração
+    editExpirationInput.addEventListener('change', () => {
+        const selectedDate = new Date(editExpirationInput.value);
+        if (selectedDate && !isNaN(selectedDate.getTime())) {
+            updateDaysRemaining(selectedDate);
+        } else {
+            editDaysRemainingInput.value = '0 dias';
+        }
     });
 
     // Fechar modais
@@ -281,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.save-btn').addEventListener('click', () => {
         const name = editNameInput.value;
         const balance = parseFloat(editBalanceInput.value);
-        const days = parseInt(editDaysInput.value);
+        const expirationDate = editExpirationInput.value ? new Date(editExpirationInput.value).toISOString() : null;
 
         if (!name) {
             alert('Nome não pode estar vazio.');
@@ -290,16 +306,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isNaN(balance) || balance < 0) {
             alert('Saldo inválido. Insira um número positivo.');
             return;
-        }
-        if (isNaN(days) || days < 0) {
-            alert('Dias restantes deve ser um número positivo.');
-            return;
-        }
-
-        let expirationDate = null;
-        if (days > 0) {
-            const currentDate = new Date();
-            expirationDate = new Date(currentDate.setDate(currentDate.getDate() + days)).toISOString();
         }
 
         fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
