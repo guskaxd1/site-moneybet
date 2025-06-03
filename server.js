@@ -219,9 +219,18 @@ app.delete('/user/:userId', async (req, res) => {
     try {
         console.log(`Rota DELETE /user/${req.params.userId} acessada`);
         db = await ensureDBConnection();
-        const userId = req.params.userId.toString(); // Garantir que userId seja string
+        const userId = req.params.userId.toString().trim(); // Garantir que userId seja string e sem espaços
+
+        if (!userId) {
+            console.error('Erro: userId inválido ou vazio');
+            return res.status(400).json({ error: 'ID do usuário inválido ou vazio' });
+        }
 
         console.log(`Cancelando assinatura do usuário ${userId}`);
+        // Verificar se o documento existe antes de deletar
+        const existingDoc = await db.collection('expirationDates').findOne({ userId: userId });
+        console.log('Documento encontrado antes da exclusão:', existingDoc);
+
         const result = await db.collection('expirationDates').deleteOne({ userId: userId });
         console.log('Resultado da exclusão de data de expiração:', { deletedCount: result.deletedCount });
 

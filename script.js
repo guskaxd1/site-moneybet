@@ -80,7 +80,7 @@ function calculateDaysRemaining(expirationDate) {
 function openCancelModal(userId, name) {
     console.log('Abrindo modal de cancelamento:', { userId, name });
     if (!cancelModal || !cancelNameDisplay) {
-        console.error('Erro: Elementos do modal de cancelamento não encontrados');
+        console.error('Erro: Elementos do modal de cancelamento não foram encontrados');
         return;
     }
     currentUserId = userId;
@@ -114,21 +114,20 @@ function openCancelModal(userId, name) {
                     statusText: response.statusText
                 });
                 if (!response.ok) {
-                    return response.text().then(text => {
-                        throw new Error(`Erro: ${response.status} - ${text || response.statusText}`);
+                    return response.json().then(data => {
+                        throw new Error(data.message || `Erro: ${response.status} - ${response.statusText}`);
                     });
                 }
                 return response.json();
             })
             .then(data => {
-                if (data.error) throw new Error(data.error);
                 console.log('Resposta do servidor:', data);
                 alert('Sucesso: Assinatura cancelada!');
                 cancelModal.style.display = 'none';
                 loadUsers();
             })
             .catch(error => {
-                console.error('Erro ao cancelar assinatura:', error);
+                console.error('Erro ao cancelar assinatura:', error.message);
                 alert(`Erro ao cancelar assinatura: ${error.message}`);
             });
         });
