@@ -39,7 +39,7 @@ function updateDaysRemaining(expirationDate) {
         console.error('Erro: editDaysRemainingInput não encontrado');
         return;
     }
-    const currentDate = new Date('2025-06-03T00:58:00-03:00'); // 12:58 AM -03, June 03, 2025
+    const currentDate = new Date('2025-06-03T01:03:00-03:00'); // 01:03 AM -03, June 03, 2025
     const diffTime = new Date(expirationDate) - currentDate;
     const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     editDaysRemainingInput.value = daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 totalBalance += balance;
             }
         });
-        const currentDate = new Date('2025-06-03T00:58:00-03:00'); // 12:58 AM -03, June 03, 2025
+        const currentDate = new Date('2025-06-03T01:03:00-03:00'); // 01:03 AM -03, June 03, 2025
         const activeSubscriptions = users.filter(user => {
             if (!user.expirationDate) return false;
             const expiration = new Date(user.expirationDate);

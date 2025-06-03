@@ -136,60 +136,72 @@ app.put('/user/:userId', async (req, res) => {
         const userId = req.params.userId;
         const { name, balance, expirationDate } = req.body;
 
+        console.log('Dados recebidos:', { name, balance, expirationDate });
+
         if (balance !== undefined && (isNaN(parseFloat(balance)) || parseFloat(balance) < 0)) {
+            console.warn('Validação falhou: Saldo deve ser um número positivo');
             return res.status(400).json({ error: 'Saldo deve ser um número positivo' });
         }
+
+        // Relaxar validação de expirationDate para aceitar null ou string válida
         if (expirationDate !== undefined && expirationDate !== null && isNaN(Date.parse(expirationDate))) {
+            console.warn('Validação falhou: Data de expiração inválida');
             return res.status(400).json({ error: 'Data de expiração inválida' });
         }
 
         // Atualizar nome na coleção registeredUsers
         if (name) {
             console.log(`Atualizando nome do usuário ${userId} para ${name}`);
-            await db.collection('registeredUsers').updateOne(
+            const result = await db.collection('registeredUsers').updateOne(
                 { userId: userId },
                 { $set: { name: name } },
                 { upsert: true }
             );
+            console.log('Resultado da atualização de nome:', result);
         }
 
         // Atualizar saldo
         if (balance !== undefined) {
             console.log(`Atualizando saldo do usuário ${userId} para ${balance}`);
-            await db.collection('userBalances').updateOne(
+            const result = await db.collection('userBalances').updateOne(
                 { userId: userId },
                 { $set: { balance: parseFloat(balance) } },
                 { upsert: true }
             );
+            console.log('Resultado da atualização de saldo:', result);
         }
 
         // Atualizar data de expiração
         if (expirationDate !== undefined) {
             console.log(`Atualizando data de expiração do usuário ${userId} para ${expirationDate}`);
             if (expirationDate === null) {
-                await db.collection('expirationDates').deleteOne({ userId: userId });
+                const result = await db.collection('expirationDates').deleteOne({ userId: userId });
+                console.log('Resultado da exclusão de data de expiração:', result);
             } else {
-                await db.collection('expirationDates').updateOne(
+                const result = await db.collection('expirationDates').updateOne(
                     { userId: userId },
                     { $set: { expirationDate: new Date(expirationDate).toISOString() } },
                     { upsert: true }
                 );
+                console.log('Resultado da atualização de data de expiração:', result);
             }
         }
 
         // Retornar dados atualizados
         const updatedBalance = await db.collection('userBalances').findOne({ userId: userId }) || { balance: 0 };
         const updatedExpiration = await db.collection('expirationDates').findOne({ userId: userId }) || { expirationDate: null };
+        const updatedUser = await db.collection('registeredUsers').findOne({ userId: userId });
         res.setHeader('Content-Type', 'application/json');
         res.json({
             message: 'Dados atualizados com sucesso',
             updatedData: {
                 balance: updatedBalance.balance,
-                expirationDate: updatedExpiration.expirationDate
+                expirationDate: updatedExpiration.expirationDate,
+                name: updatedUser ? updatedUser.name : null
             }
         });
     } catch (err) {
-        console.error('Erro na rota PUT /user/:userId:', err.message);
+        console.error('Erro na rota PUT /user/:userId:', err.message, err.stack);
         res.status(500).json({ error: 'Erro ao atualizar dados', details: err.message });
     }
 });
@@ -203,7 +215,8 @@ app.delete('/user/:userId', async (req, res) => {
 
         // Remover data de expiração para cancelar assinatura
         console.log(`Cancelando assinatura do usuário ${userId}`);
-        await db.collection('expirationDates').deleteOne({ userId: userId });
+        const result = await db.collection('expirationDates').deleteOne({ userId: userId });
+        console.log('Resultado da exclusão de data de expiração:', result);
 
         res.setHeader('Content-Type', 'application/json');
         res.json({ message: 'Assinatura cancelada com sucesso' });
