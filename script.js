@@ -42,7 +42,7 @@ function openEditModal(userId, name, balance, expirationDate) {
         editDaysRemainingInput.value = '0 dias';
     }
 
-    editModal.style.display = 'block';
+    $('#editModal').modal('show');
     console.log('Modal de edição exibido');
 }
 
@@ -85,7 +85,7 @@ function openCancelModal(userId, name) {
     }
     currentUserId = userId;
     cancelNameDisplay.textContent = name || '-';
-    cancelModal.style.display = 'block';
+    $('#cancelModal').modal('show');
     console.log('Modal de cancelamento exibido');
 
     // Associar o evento ao botão "Cancelar Assinatura" no modal
@@ -122,7 +122,7 @@ function openCancelModal(userId, name) {
             .then(data => {
                 console.log('Resposta do servidor:', data);
                 alert('Sucesso: Assinatura cancelada com sucesso!');
-                cancelModal.style.display = 'none';
+                $('#cancelModal').modal('hide');
                 loadUsers();
             })
             .catch(error => {
@@ -172,7 +172,7 @@ function openCancelModal(userId, name) {
             .then(data => {
                 console.log('Resposta do servidor:', data);
                 alert('Sucesso: Todos os dados do usuário foram excluídos com sucesso!');
-                cancelModal.style.display = 'none';
+                $('#cancelModal').modal('hide');
                 loadUsers();
             })
             .catch(error => {
@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showLoading();
         searchContainer.style.display = 'none';
         usersTable.style.display = 'none';
-        fetch('https://site-moneybet.onrender.com/users?reset=true', {
+        fetch('https://site-moneybet.onrender.com/users', {
             credentials: 'include',
             mode: 'cors'
         })
@@ -294,6 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Erro ao carregar Dashboard:', error);
             updateDashboardStats([]);
             showError(`Erro ao carregar dados: ${error.message}`);
+            alert(`Erro ao carregar dados: ${error.message}`);
         });
     }
 
@@ -303,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showLoading();
         searchContainer.style.display = 'block';
         usersTable.style.display = 'table';
-        fetch('https://site-moneybet.onrender.com/users?reset=true', {
+        fetch('https://site-moneybet.onrender.com/users', {
             credentials: 'include',
             mode: 'cors'
         })
@@ -344,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tableBody.innerHTML = `<tr><td colspan="9">Erro: ${error.message}</td></tr>`;
             updateDashboardStats([]);
             showError(`Erro ao carregar usuários: ${error.message}`);
+            alert(`Erro ao carregar usuários: ${error.message}`);
         });
     }
 
@@ -397,8 +399,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${expirationValue}</td>
                 <td>${daysRemaining}</td>
                 <td>
-                    <button class="edit-btn" onclick="openEditModal('${user.userId || ''}', '${(user.name || '').replace(/'/g, "\\'")}', ${balanceValue}, '${user.expirationDate || ''}')"><i class="fas fa-edit"></i></button>
-                    <button class="delete-btn" onclick="openCancelModal('${user.userId || ''}', '${(user.name || '').replace(/'/g, "\\'")}')"><i class="fas fa-times"></i></button>
+                    <button class="action-btn edit-btn" onclick="openEditModal('${user.userId || ''}', '${(user.name || '').replace(/'/g, "\\'")}', ${balanceValue}, '${user.expirationDate || ''}')"><i class="fas fa-edit"></i> Editar</button>
+                    <button class="action-btn delete-btn" onclick="openCancelModal('${user.userId || ''}', '${(user.name || '').replace(/'/g, "\\'")}')"><i class="fas fa-trash-alt"></i> Excluir</button>
                 </td>
             `;
             tableBody.appendChild(row);
@@ -435,8 +437,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fechar modais
     document.querySelectorAll('.modal-close, .cancel-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            if (editModal) editModal.style.display = 'none';
-            if (cancelModal) cancelModal.style.display = 'none';
+            $('#editModal').modal('hide');
+            $('#cancelModal').modal('hide');
             currentUserId = null;
             console.log('Modal fechado');
         });
@@ -502,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('Dados retornados após salvar:', data);
                 if (data.error) throw new Error(data.error);
                 alert('Sucesso: Dados atualizados!');
-                editModal.style.display = 'none';
+                $('#editModal').modal('hide');
                 loadUsers(); // Reload to reflect changes
             })
             .catch(error => {
@@ -517,10 +519,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fechar modal ao clicar fora dele
     window.addEventListener('click', (event) => {
         if (event.target === editModal) {
-            editModal.style.display = 'none';
+            $('#editModal').modal('hide');
         }
         if (event.target === cancelModal) {
-            cancelModal.style.display = 'none';
+            $('#cancelModal').modal('hide');
         }
         if (editModal.style.display === 'none' || cancelModal.style.display === 'none') {
             currentUserId = null;
@@ -557,6 +559,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adicionar evento de logout
     logoutBtn.addEventListener('click', handleLogout);
 
-    // Inicializar com o Dashboard
-    loadDashboard();
+    // Inicializar com a aba Usuários
+    loadUsers();
 });

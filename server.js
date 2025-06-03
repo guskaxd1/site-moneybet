@@ -40,7 +40,7 @@ async function ensureDBConnection() {
 
 // Configurar middleware
 app.use(cors({
-    origin: 'https://site-moneybet.onrender.com',
+    origin: '*', // Permitir qualquer origem durante o desenvolvimento
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     exposedHeaders: ['Set-Cookie']
@@ -69,24 +69,10 @@ app.get('/users', async (req, res) => {
         const users = await db.collection('registeredUsers').find().toArray();
         console.log(`Encontrados ${users.length} usuários`);
 
-        // Reset balance to 0 if requested via query parameter
-        if (req.query.reset === 'true') {
-            console.log('Reset de saldo solicitado para todos os usuários');
-            await db.collection('userBalances').updateMany(
-                {},
-                { $set: { balance: 0 } },
-                { upsert: true }
-            );
-            console.log('Saldos resetados para 0');
-        }
-
         const usersData = await Promise.all(users.map(async (user) => {
             console.log(`Processando usuário: ${user.userId}`);
             const balanceDoc = await db.collection('userBalances').findOne({ userId: user.userId }) || { balance: 0 };
             const expirationDoc = await db.collection('expirationDates').findOne({ userId: user.userId }) || { expirationDate: null };
-
-            // Set balance to 0 regardless of paymentHistory
-            let balance = 0;
 
             return {
                 userId: user.userId,
@@ -94,14 +80,11 @@ app.get('/users', async (req, res) => {
                 whatsapp: user.whatsapp,
                 registeredAt: user.registeredAt,
                 paymentHistory: user.paymentHistory || [],
-                balance: balance,
+                balance: balanceDoc.balance,
                 expirationDate: expirationDoc ? expirationDoc.expirationDate : null
             };
         }));
 
-        if (usersData.every(user => user.balance === 0)) {
-            console.log('Todos os usuários têm saldo 0 após processamento');
-        }
         console.log('Enviando resposta com os dados dos usuários:', usersData);
         res.setHeader('Content-Type', 'application/json');
         res.json(usersData);
