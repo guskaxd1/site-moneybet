@@ -232,14 +232,13 @@ tr:hover {
     z-index: 1000;
     align-items: center;
     justify-content: center;
-    padding: 10px;
+    padding: 20px;
 }
 
 .modal-content {
     background: #fff;
     width: 100%;
     max-width: 500px;
-    margin: 0 auto;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -271,32 +270,45 @@ tr:hover {
     color: #fff;
 }
 
+.modal-close:hover {
+    color: #ddd;
+}
+
 .modal-body {
     padding: 20px;
     text-align: center;
 }
 
-.modal-field {
-    margin-bottom: 15px;
-}
-
-.modal-field label {
-    display: block;
-    margin-bottom: 5px;
-    color: #7f8c8d;
-}
-
-.modal-field input,
-.modal-field p {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+.confirmation-text {
     font-size: 16px;
+    color: #333;
+    margin-bottom: 20px;
 }
 
-.modal-field p {
-    background: #f9f9f9;
+.confirmation-text strong {
+    color: #e74c3c;
+}
+
+.delete-user-box {
+    padding: 15px;
+    border: 1px solid #e74c3c;
+    background-color: #fff6f6;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.delete-title {
+    font-size: 16px;
+    color: #e74c3c;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.delete-warning {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin: 0;
+    line-height: 1.5;
 }
 
 .modal-footer {
@@ -305,6 +317,7 @@ tr:hover {
     justify-content: center;
     gap: 10px;
     background: #f4f4f4;
+    border-top: 1px solid #ddd;
 }
 
 .modal-btn {
@@ -314,6 +327,7 @@ tr:hover {
     cursor: pointer;
     font-size: 14px;
     transition: background-color 0.3s ease;
+    min-width: 120px;
 }
 
 .cancel-btn {
@@ -352,28 +366,30 @@ tr:hover {
     background: #c0392b;
 }
 
-/* Estilização da caixa de deletar usuário */
-.delete-user-box {
-    margin-top: 20px;
-    padding: 15px;
-    border: 1px solid #e74c3c;
-    background-color: #fff6f6;
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+/* Modal Field */
+.modal-field {
+    margin-bottom: 15px;
+    text-align: left;
 }
 
-.delete-user-box h4 {
-    font-size: 16px;
-    color: #e74c3c;
-    margin-bottom: 10px;
-    font-weight: 600;
-}
-
-.delete-user-box p {
-    font-size: 14px;
+.modal-field label {
+    display: block;
+    margin-bottom: 5px;
     color: #7f8c8d;
-    margin: 0;
-    line-height: 1.5;
+    font-size: 14px;
+}
+
+.modal-field input,
+.modal-field p {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.modal-field p {
+    background: #f9f9f9;
 }
 
 /* Responsividade */
@@ -470,19 +486,27 @@ tr:hover {
     .modal-btn {
         padding: 8px 16px;
         font-size: 12px;
-    }
-
-    .edit-btn, .delete-btn {
-        padding: 6px;
-        font-size: 14px;
+        min-width: 100px;
     }
 
     .modal-footer {
         flex-direction: column;
-        gap: 5px;
+        gap: 8px;
     }
 
-    .modal-footer .modal-btn {
+    .modal-btn {
         width: 100%;
+    }
+
+    .confirmation-text {
+        font-size: 14px;
+    }
+
+    .delete-title {
+        font-size: 14px;
+    }
+
+    .delete-warning {
+        font-size: 12px;
     }
 }
