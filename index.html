@@ -79,12 +79,14 @@
             </div>
         </main>
     </div>
+
+    <!-- Modal Editar Usuário -->
     <div class="modal fade" id="editModal" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Editar Usuário</h5>
-                    <button type="button" class="close modal-close" data-dismiss="modal">
+                    <button type="button" class="close" data-dismiss="modal">
                         <span>×</span>
                     </button>
                 </div>
@@ -111,18 +113,20 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="modal-btn cancel-btn" data-dismiss="modal">Cancelar</button>
-                    <button type="button" class="modal-btn save-btn">Salvar Alterações</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary save-btn">Salvar Alterações</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Modal Cancelar Assinatura -->
     <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
-                <div class="modal-header cancel-header">
+                <div class="modal-header">
                     <h5 class="modal-title">Cancelar Assinatura</h5>
-                    <button type="button" class="close modal-close" data-dismiss="modal">
+                    <button type="button" class="close" data-dismiss="modal">
                         <span>×</span>
                     </button>
                 </div>
@@ -134,13 +138,14 @@
                     </div>
                 </div>
                 <div class="modal-footer justify-content-center">
-                    <button type="button" class="modal-btn cancel-btn">Não</button>
-                    <button type="button" class="modal-btn delete-btn">Cancelar Assinatura</button>
-                    <button type="button" class="modal-btn delete-all-btn">Excluir Todos os Dados</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Não</button>
+                    <button type="button" class="btn btn-danger delete-btn">Cancelar Assinatura</button>
+                    <button type="button" class="btn btn-danger delete-all-btn">Excluir Todos os Dados</button>
                 </div>
             </div>
         </div>
     </div>
+
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>

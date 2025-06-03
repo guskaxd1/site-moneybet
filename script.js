@@ -87,103 +87,6 @@ function openCancelModal(userId, name) {
     cancelNameDisplay.textContent = name || '-';
     $('#cancelModal').modal('show');
     console.log('Modal de cancelamento exibido');
-
-    // Associar o evento ao botão "Cancelar Assinatura" no modal
-    const cancelSubscriptionBtn = document.querySelector('#cancelModal .modal-footer .delete-btn');
-    if (cancelSubscriptionBtn) {
-        const newCancelBtn = cancelSubscriptionBtn.cloneNode(true);
-        cancelSubscriptionBtn.parentNode.replaceChild(newCancelBtn, cancelSubscriptionBtn);
-        
-        newCancelBtn.addEventListener('click', () => {
-            console.log('Botão "Cancelar Assinatura" clicado para userId:', currentUserId);
-            if (!currentUserId) {
-                console.error('Erro: currentUserId não definido');
-                alert('Erro: ID do usuário não encontrado.');
-                return;
-            }
-            fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                mode: 'cors'
-            })
-            .then(response => {
-                console.log('Resposta do servidor ao deletar:', {
-                    status: response.status,
-                    statusText: response.statusText
-                });
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.message || `Erro: ${response.status} - ${response.statusText}`);
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Resposta do servidor:', data);
-                alert('Sucesso: Assinatura cancelada com sucesso!');
-                $('#cancelModal').modal('hide');
-                loadUsers();
-            })
-            .catch(error => {
-                console.error('Erro ao cancelar assinatura:', error.message);
-                alert(`Aviso: ${error.message}`);
-            });
-        });
-        console.log('Evento de clique associado ao botão "Cancelar Assinatura"');
-    } else {
-        console.error('Erro: Botão "Cancelar Assinatura" no modal não encontrado');
-    }
-
-    // Associar o evento ao botão "Excluir Todos os Dados"
-    const deleteAllBtn = document.querySelector('#cancelModal .modal-footer .delete-all-btn');
-    if (deleteAllBtn) {
-        const newDeleteAllBtn = deleteAllBtn.cloneNode(true);
-        deleteAllBtn.parentNode.replaceChild(newDeleteAllBtn, deleteAllBtn);
-
-        newDeleteAllBtn.addEventListener('click', () => {
-            console.log('Botão "Excluir Todos os Dados" clicado para userId:', currentUserId);
-            if (!currentUserId) {
-                console.error('Erro: currentUserId não definido');
-                alert('Erro: ID do usuário não encontrado.');
-                return;
-            }
-            if (!confirm('Tem certeza que deseja excluir TODOS os dados deste usuário? Esta ação não pode ser desfeita.')) {
-                return;
-            }
-            fetch(`https://site-moneybet.onrender.com/user/${currentUserId}/all`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                mode: 'cors'
-            })
-            .then(response => {
-                console.log('Resposta do servidor ao deletar todos os dados:', {
-                    status: response.status,
-                    statusText: response.statusText
-                });
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.message || `Erro: ${response.status} - ${response.statusText}`);
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Resposta do servidor:', data);
-                alert('Sucesso: Todos os dados do usuário foram excluídos com sucesso!');
-                $('#cancelModal').modal('hide');
-                loadUsers();
-            })
-            .catch(error => {
-                console.error('Erro ao excluir todos os dados:', error.message);
-                alert(`Erro ao excluir todos os dados: ${error.message}`);
-            });
-        });
-        console.log('Evento de clique associado ao botão "Excluir Todos os Dados"');
-    } else {
-        console.error('Erro: Botão "Excluir Todos os Dados" no modal não encontrado');
-    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -434,16 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Fechar modais
-    document.querySelectorAll('.modal-close, .cancel-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            $('#editModal').modal('hide');
-            $('#cancelModal').modal('hide');
-            currentUserId = null;
-            console.log('Modal fechado');
-        });
-    });
-
     // Salvar alterações
     const saveBtn = document.querySelector('.save-btn');
     if (saveBtn) {
@@ -505,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.error) throw new Error(data.error);
                 alert('Sucesso: Dados atualizados!');
                 $('#editModal').modal('hide');
-                loadUsers(); // Reload to reflect changes
+                loadUsers();
             })
             .catch(error => {
                 console.error('Erro ao salvar:', error);
@@ -516,18 +409,10 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Erro: Botão "Salvar Alterações" não encontrado');
     }
 
-    // Fechar modal ao clicar fora dele
-    window.addEventListener('click', (event) => {
-        if (event.target === editModal) {
-            $('#editModal').modal('hide');
-        }
-        if (event.target === cancelModal) {
-            $('#cancelModal').modal('hide');
-        }
-        if (editModal.style.display === 'none' || cancelModal.style.display === 'none') {
-            currentUserId = null;
-            console.log('Modal fechado por clique fora');
-        }
+    // Fechar modais ao clicar fora ou no botão de fechar
+    $('#editModal, #cancelModal').on('hidden.bs.modal', () => {
+        currentUserId = null;
+        console.log('Modal fechado');
     });
 
     // Função para mostrar estado de carregamento

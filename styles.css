@@ -542,3 +542,6 @@ tr:hover {
         margin-right: 5px;
     }
 }
+.modal-backdrop {
+    display: none !important;
+}
