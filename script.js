@@ -51,7 +51,7 @@ function updateDaysRemaining(expirationDate) {
         console.error('Erro: editDaysRemainingInput não encontrado');
         return;
     }
-    const currentDate = new Date('2025-06-03T01:25:00-03:00'); // 01:25 AM -03, June 03, 2025
+    const currentDate = new Date('2025-06-03T01:31:00-03:00'); // 01:31 AM -03, June 03, 2025
     const diffTime = new Date(expirationDate) - currentDate;
     const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     editDaysRemainingInput.value = daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showLoading();
         searchContainer.style.display = 'none';
         usersTable.style.display = 'none';
-        fetch('https://site-moneybet.onrender.com/users', {
+        fetch('https://site-moneybet.onrender.com/users?reset=true', {
             credentials: 'include',
             mode: 'cors'
         })
@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showLoading();
         searchContainer.style.display = 'block';
         usersTable.style.display = 'table';
-        fetch('https://site-moneybet.onrender.com/users', {
+        fetch('https://site-moneybet.onrender.com/users?reset=true', {
             credentials: 'include',
             mode: 'cors'
         })
@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 totalBalance += balance;
             }
         });
-        const currentDate = new Date('2025-06-03T01:25:00-03:00'); // 01:25 AM -03, June 03, 2025
+        const currentDate = new Date('2025-06-03T01:31:00-03:00'); // 01:31 AM -03, June 03, 2025
         const activeSubscriptions = users.filter(user => {
             if (!user.expirationDate) return false;
             const expiration = new Date(user.expirationDate);

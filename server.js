@@ -69,20 +69,24 @@ app.get('/users', async (req, res) => {
         const users = await db.collection('registeredUsers').find().toArray();
         console.log(`Encontrados ${users.length} usuários`);
 
+        // Reset balance to 0 if requested via query parameter
+        if (req.query.reset === 'true') {
+            console.log('Reset de saldo solicitado para todos os usuários');
+            await db.collection('userBalances').updateMany(
+                {},
+                { $set: { balance: 0 } },
+                { upsert: true }
+            );
+            console.log('Saldos resetados para 0');
+        }
+
         const usersData = await Promise.all(users.map(async (user) => {
             console.log(`Processando usuário: ${user.userId}`);
-            const balanceDoc = await db.collection('userBalances').findOne({ userId: user.userId });
-            const expirationDoc = await db.collection('expirationDates').findOne({ userId: user.userId });
+            const balanceDoc = await db.collection('userBalances').findOne({ userId: user.userId }) || { balance: 0 };
+            const expirationDoc = await db.collection('expirationDates').findOne({ userId: user.userId }) || { expirationDate: null };
 
-            // Calcular balance como a soma dos amounts do paymentHistory
-            let balance = balanceDoc ? parseFloat(balanceDoc.balance) || 0 : 0;
-            if (Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0) {
-                const paymentTotal = user.paymentHistory.reduce((sum, payment) => sum + (parseFloat(payment.amount) || 0), 0);
-                console.log(`Soma de paymentHistory para ${user.userId}: ${paymentTotal}`);
-                balance = paymentTotal; // Override balance with payment total
-            } else if (!balanceDoc) {
-                console.warn(`Nenhum saldo ou paymentHistory encontrado para usuário ${user.userId}, usando 0`);
-            }
+            // Set balance to 0 regardless of paymentHistory
+            let balance = 0;
 
             return {
                 userId: user.userId,
@@ -96,7 +100,7 @@ app.get('/users', async (req, res) => {
         }));
 
         if (usersData.every(user => user.balance === 0)) {
-            console.warn('Todos os usuários têm saldo 0, verificando dados');
+            console.log('Todos os usuários têm saldo 0 após processamento');
         }
         console.log('Enviando resposta com os dados dos usuários:', usersData);
         res.setHeader('Content-Type', 'application/json');
@@ -143,7 +147,6 @@ app.put('/user/:userId', async (req, res) => {
             return res.status(400).json({ error: 'Saldo deve ser um número positivo' });
         }
 
-        // Melhorar validação de expirationDate
         let parsedExpirationDate = null;
         if (expirationDate !== undefined && expirationDate !== null) {
             try {
@@ -158,7 +161,6 @@ app.put('/user/:userId', async (req, res) => {
             }
         }
 
-        // Atualizar nome na coleção registeredUsers
         if (name) {
             console.log(`Atualizando nome do usuário ${userId} para ${name}`);
             const result = await db.collection('registeredUsers').updateOne(
@@ -169,7 +171,6 @@ app.put('/user/:userId', async (req, res) => {
             console.log('Resultado da atualização de nome:', result);
         }
 
-        // Atualizar saldo
         if (balance !== undefined) {
             console.log(`Atualizando saldo do usuário ${userId} para ${balance}`);
             const result = await db.collection('userBalances').updateOne(
@@ -180,7 +181,6 @@ app.put('/user/:userId', async (req, res) => {
             console.log('Resultado da atualização de saldo:', result);
         }
 
-        // Atualizar data de expiração
         if (expirationDate !== undefined) {
             console.log(`Atualizando data de expiração do usuário ${userId} para ${expirationDate}`);
             if (expirationDate === null) {
@@ -196,7 +196,6 @@ app.put('/user/:userId', async (req, res) => {
             }
         }
 
-        // Retornar dados atualizados
         const updatedBalance = await db.collection('userBalances').findOne({ userId: userId }) || { balance: 0 };
         const updatedExpiration = await db.collection('expirationDates').findOne({ userId: userId }) || { expirationDate: null };
         const updatedUser = await db.collection('registeredUsers').findOne({ userId: userId });
@@ -222,7 +221,6 @@ app.delete('/user/:userId', async (req, res) => {
         db = await ensureDBConnection();
         const userId = req.params.userId;
 
-        // Remover data de expiração para cancelar assinatura
         console.log(`Cancelando assinatura do usuário ${userId}`);
         const result = await db.collection('expirationDates').deleteOne({ userId: userId });
         console.log('Resultado da exclusão de data de expiração:', result);
