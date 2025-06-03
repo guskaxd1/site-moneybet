@@ -25,6 +25,11 @@ body {
     position: fixed;
     transition: transform 0.3s ease;
     z-index: 1000;
+    transform: translateX(-100%); /* Menu escondido por padrão */
+}
+
+.sidebar.active {
+    transform: translateX(0); /* Menu visível ao clicar */
 }
 
 .sidebar-header {
@@ -71,9 +76,9 @@ body {
     background-color: #34495e;
 }
 
-/* Botão de menu para mobile */
+/* Botão de menu para todas as resoluções */
 .menu-toggle {
-    display: none;
+    display: block; /* Sempre visível */
     position: fixed;
     top: 10px;
     left: 10px;
@@ -93,10 +98,10 @@ body {
 
 /* Conteúdo principal */
 .main-content {
-    margin-left: 200px;
+    margin-left: 0; /* Remove margem para ocupar toda a largura */
     padding: 20px;
-    width: calc(100% - 200px);
-    transition: margin-left 0.3s ease, width 0.3s ease;
+    width: 100%; /* Ocupa todo o espaço */
+    transition: none; /* Remove transição de margem */
 }
 
 /* Header */
@@ -160,6 +165,11 @@ header h1 {
 }
 
 /* Tabela */
+.table-container {
+    position: relative;
+    overflow-x: auto;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -171,7 +181,7 @@ table {
 
 th, td {
     padding: 15px;
-    text-align: left;
+    text-align: center;
     border-bottom: 1px solid #ddd;
 }
 
@@ -239,7 +249,7 @@ tr:hover {
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
+    height: 100;
     background: rgba(0, 0, 0, 0.5);
     z-index: 1000;
     align-items: center;
@@ -407,12 +417,7 @@ tr:hover {
 /* Responsividade */
 @media (max-width: 1024px) {
     .sidebar {
-        width: 160px;
-    }
-
-    .main-content {
-        margin-left: 160px;
-        width: calc(100% - 160px);
+        width: 200px;
     }
 
     .panel-card {
@@ -423,7 +428,8 @@ tr:hover {
         font-size: 14px;
     }
 
-    th, td {
+    th,
+    td {
         padding: 10px;
     }
 
@@ -443,24 +449,6 @@ tr:hover {
 }
 
 @media (max-width: 768px) {
-    .sidebar {
-        transform: translateX(-100%);
-        width: 200px;
-    }
-
-    .sidebar.active {
-        transform: translateX(0);
-    }
-
-    .main-content {
-        margin-left: 0;
-        width: 100%;
-    }
-
-    .menu-toggle {
-        display: block;
-    }
-
     .admin-panel {
         grid-template-columns: 1fr;
     }
@@ -470,11 +458,17 @@ tr:hover {
     }
 
     .container {
-        overflow-x: auto;
+        padding: 0;
     }
 
     table {
         min-width: 800px;
+        font-size: 12px;
+    }
+
+    th,
+    td {
+        padding: 8px;
     }
 
     header h1 {
@@ -488,6 +482,12 @@ tr:hover {
 
     .modal-content {
         max-width: 90%;
+    }
+
+    .action-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+        margin-right: 2px;
     }
 }
 
@@ -537,11 +537,70 @@ tr:hover {
     }
 
     .action-btn {
-        padding: 6px 10px;
-        font-size: 12px;
-        margin-right: 5px;
+        padding: 6px 8px;
+        font-size: 10px;
+        margin-right: 2px;
+    }
+
+    table {
+        font-size: 10px;
+    }
+
+    th,
+    td {
+        padding: 6px;
     }
 }
+
+/* Ajustes adicionais para a tabela */
+@media (max-width: 600px) {
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    thead {
+        display: block;
+    }
+
+    tbody {
+        display: block;
+    }
+
+    tr {
+        display: flex;
+        flex-wrap: wrap;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th,
+    td {
+        flex: 1;
+        min-width: 100px;
+        text-align: center;
+        padding: 5px;
+    }
+
+    /* Priorizar colunas importantes */
+    th:nth-child(1), td:nth-child(1), /* ID */
+    th:nth-child(2), td:nth-child(2), /* Nome */
+    th:nth-child(9), td:nth-child(9)  /* Ações */
+    {
+        min-width: 120px;
+    }
+
+    th:nth-child(3), td:nth-child(3), /* WhatsApp */
+    th:nth-child(4), td:nth-child(4), /* Data de Registro */
+    th:nth-child(5), td:nth-child(5), /* Histórico de Pagamento */
+    th:nth-child(6), td:nth-child(6), /* Saldo */
+    th:nth-child(7), td:nth-child(7), /* Data de Expiração */
+    th:nth-child(8), td:nth-child(8)  /* Dias Restantes */
+    {
+        min-width: 100px;
+    }
+}
+
 .modal-backdrop {
     display: none !important;
 }

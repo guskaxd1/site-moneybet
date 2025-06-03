@@ -225,10 +225,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Alternar menu em telas menores
-    menuToggle.addEventListener('click', () => {
-        sidebar.classList.toggle('active');
-        console.log('Menu toggle clicado, estado:', sidebar.classList.contains('active'));
-    });
+menuToggle.addEventListener('click', () => {
+    sidebar.classList.toggle('active');
+    console.log('Menu toggle clicado, estado:', sidebar.classList.contains('active'));
+});
 
     // Função para gerenciar a navegação ativa
     const navLinks = document.querySelectorAll('.sidebar-nav a');
