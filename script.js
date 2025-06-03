@@ -51,7 +51,7 @@ function updateDaysRemaining(expirationDate) {
         console.error('Erro: editDaysRemainingInput não encontrado');
         return;
     }
-    const currentDate = new Date('2025-06-03T01:38:00-03:00'); // 01:38 AM -03, June 03, 2025
+    const currentDate = new Date(); // Usar a data e hora atuais
     const diffTime = new Date(expirationDate) - currentDate;
     const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     editDaysRemainingInput.value = daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
@@ -67,7 +67,7 @@ function calculateDaysRemaining(expirationDate) {
             console.warn('Data de expiração inválida na tabela:', expirationDate);
             return '0 dias';
         }
-        const currentDate = new Date('2025-06-03T01:38:00-03:00'); // 01:38 AM -03, June 03, 2025
+        const currentDate = new Date(); // Usar a data e hora atuais
         const diffTime = expDate - currentDate;
         const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         return daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
@@ -262,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 totalBalance += balance;
             }
         });
-        const currentDate = new Date('2025-06-03T01:38:00-03:00'); // 01:38 AM -03, June 03, 2025
+        const currentDate = new Date(); // Usar a data e hora atuais
         const activeSubscriptions = users.filter(user => {
             if (!user.expirationDate) return false;
             const expiration = new Date(user.expirationDate);
