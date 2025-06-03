@@ -242,6 +242,7 @@ tr:hover {
     margin: 0 auto;
     border-radius: 8px;
     overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .modal-header {
@@ -257,17 +258,22 @@ tr:hover {
     background: #e74c3c;
 }
 
-.modal-header h2 {
-    font-size: 20px;
+.modal-header h5 {
+    font-size: 18px;
+    margin: 0;
 }
 
 .modal-close {
     cursor: pointer;
     font-size: 24px;
+    background: none;
+    border: none;
+    color: #fff;
 }
 
 .modal-body {
     padding: 20px;
+    text-align: center;
 }
 
 .modal-field {
@@ -296,7 +302,7 @@ tr:hover {
 .modal-footer {
     padding: 15px 20px;
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 10px;
     background: #f4f4f4;
 }
@@ -307,6 +313,7 @@ tr:hover {
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
+    transition: background-color 0.3s ease;
 }
 
 .cancel-btn {
@@ -327,13 +334,46 @@ tr:hover {
     background: #2980b9;
 }
 
-.delete-btn:not(.modal-btn) {
+.delete-btn {
     background: #e74c3c;
     color: #fff;
 }
 
-.delete-btn:hover:not(.modal-btn) {
+.delete-btn:hover {
     background: #c0392b;
+}
+
+.delete-all-btn {
+    background: #e74c3c;
+    color: #fff;
+}
+
+.delete-all-btn:hover {
+    background: #c0392b;
+}
+
+/* Estilização da caixa de deletar usuário */
+.delete-user-box {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #e74c3c;
+    background-color: #fff6f6;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.delete-user-box h4 {
+    font-size: 16px;
+    color: #e74c3c;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.delete-user-box p {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin: 0;
+    line-height: 1.5;
 }
 
 /* Responsividade */
@@ -423,8 +463,8 @@ tr:hover {
         font-size: 20px;
     }
 
-    .modal-header h2 {
-        font-size: 18px;
+    .modal-header h5 {
+        font-size: 16px;
     }
 
     .modal-btn {
@@ -436,10 +476,13 @@ tr:hover {
         padding: 6px;
         font-size: 14px;
     }
-}
-.delete-user-box {
-    border: 1px solid #dc3545;
-    padding: 10px;
-    background-color: #f8d7da;
-    border-radius: 5px;
+
+    .modal-footer {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .modal-footer .modal-btn {
+        width: 100%;
+    }
 }

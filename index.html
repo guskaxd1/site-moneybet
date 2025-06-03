@@ -124,31 +124,31 @@
         </div>
     </div>
 
- <!-- Modal de Cancelamento -->
- <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Cancelar Assinatura</h5>
-                <button type="button" class="close modal-close" data-dismiss="modal">
-                    <span>×</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p>Tem certeza que deseja cancelar a assinatura de <strong id="cancel-name"></strong>?</p>
-                <div class="delete-user-box mt-3">
-                    <p><strong>Excluir Usuário Totalmente</strong></p>
-                    <p>Esta ação irá remover permanentemente todos os dados deste usuário (assinatura, saldo, histórico, etc.) do sistema. Confirme com cuidado.</p>
+    <!-- Modal de Cancelamento -->
+    <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header cancel-header">
+                    <h5 class="modal-title">Cancelar Assinatura</h5>
+                    <button type="button" class="close modal-close" data-dismiss="modal">
+                        <span>×</span>
+                    </button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary cancel-btn" data-dismiss="modal">Não</button>
-                <button type="button" class="btn btn-danger delete-btn">Cancelar Assinatura</button>
-                <button type="button" class="btn btn-danger delete-all-btn">Excluir Todos os Dados</button>
+                <div class="modal-body text-center">
+                    <p class="mb-3">Tem certeza que deseja cancelar a assinatura de <strong id="cancel-name"></strong>?</p>
+                    <div class="delete-user-box">
+                        <h4 class="text-danger mb-2">Excluir Usuário Totalmente</h4>
+                        <p class="text-muted">Esta ação irá remover permanentemente todos os dados deste usuário (assinatura, saldo, histórico, etc.) do sistema. Confirme com cuidado.</p>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary cancel-btn mr-2" data-dismiss="modal">Não</button>
+                    <button type="button" class="btn btn-danger delete-btn mr-2">Cancelar Assinatura</button>
+                    <button type="button" class="btn btn-danger delete-all-btn">Excluir Todos os Dados</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
