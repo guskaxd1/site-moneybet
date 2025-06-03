@@ -11,17 +11,16 @@ let currentUserId = null;
 
 // Funções globais para os botões de ação
 function openEditModal(userId, name, balance, expirationDate) {
-    console.log('Abrindo modal de edição para:', { userId, name, balance, expirationDate });
+    console.log('Abrindo modal de edição:', { userId, name, balance, expirationDate });
     if (!editModal || !editIdInput || !editNameInput || !editBalanceInput || !editExpirationInput || !editDaysRemainingInput) {
-        console.error('Elementos do modal de edição não encontrados');
+        console.error('Erro: Alguns elementos do modal de edição não foram encontrados');
         return;
     }
     currentUserId = userId;
-    editIdInput.value = userId;
-    editNameInput.value = name;
-    editBalanceInput.value = balance.toFixed(2);
+    editIdInput.value = userId || '-';
+    editNameInput.value = name || '-';
+    editBalanceInput.value = (balance || 0).toFixed(2);
     
-    // Set expiration date
     if (expirationDate) {
         const expDate = new Date(expirationDate);
         editExpirationInput.value = expDate.toISOString().split('T')[0];
@@ -32,34 +31,35 @@ function openEditModal(userId, name, balance, expirationDate) {
     }
 
     editModal.style.display = 'block';
-    console.log('Modal de edição exibido:', editModal.style.display);
+    console.log('Modal de edição exibido');
 }
 
 function updateDaysRemaining(expirationDate) {
     if (!editDaysRemainingInput) {
-        console.error('editDaysRemainingInput não encontrado');
+        console.error('Erro: editDaysRemainingInput não encontrado');
         return;
     }
-    const currentDate = new Date();
+    const currentDate = new Date('2025-06-03T00:10:00-03:00'); // 12:10 AM -03, June 03, 2025
     const diffTime = new Date(expirationDate) - currentDate;
     const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     editDaysRemainingInput.value = daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
+    console.log('Dias restantes calculados:', editDaysRemainingInput.value);
 }
 
 function openCancelModal(userId, name) {
-    console.log('Abrindo modal de cancelamento para:', { userId, name });
+    console.log('Abrindo modal de cancelamento:', { userId, name });
     if (!cancelModal || !cancelNameDisplay) {
-        console.error('Elementos do modal de cancelamento não encontrados');
+        console.error('Erro: Elementos do modal de cancelamento não encontrados');
         return;
     }
     currentUserId = userId;
-    cancelNameDisplay.textContent = name;
+    cancelNameDisplay.textContent = name || '-';
     cancelModal.style.display = 'block';
-    console.log('Modal de cancelamento exibido:', cancelModal.style.display);
+    console.log('Modal de cancelamento exibido');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Iniciando script: Carregando dados...');
+    console.log('Script iniciado: Carregando dados...');
 
     // Elementos do DOM
     const tableBody = document.getElementById('usersTableBody');
@@ -83,11 +83,20 @@ document.addEventListener('DOMContentLoaded', () => {
     cancelNameDisplay = document.getElementById('cancel-name');
     const loadingDiv = document.getElementById('loading');
     const errorDiv = document.getElementById('error');
-    let allUsers = []; // Armazenar todos os usuários para pesquisa
+    let allUsers = [];
+
+    // Verificar se todos os elementos foram encontrados
+    if (!tableBody || !totalUsersEl || !totalBalanceEl || !activeSubscriptionsEl || !expiredSubscriptionsEl || !sidebar || !menuToggle || !searchContainer || !searchInput || !usersTable || !logoutBtn || !editModal || !cancelModal || !editIdInput || !editNameInput || !editBalanceInput || !editExpirationInput || !editDaysRemainingInput || !cancelNameDisplay || !loadingDiv || !errorDiv) {
+        console.error('Erro: Um ou mais elementos DOM não foram encontrados:', {
+            tableBody, totalUsersEl, totalBalanceEl, activeSubscriptionsEl, expiredSubscriptionsEl, sidebar, menuToggle, searchContainer, searchInput, usersTable, logoutBtn, editModal, cancelModal, editIdInput, editNameInput, editBalanceInput, editExpirationInput, editDaysRemainingInput, cancelNameDisplay, loadingDiv, errorDiv
+        });
+        return;
+    }
 
     // Alternar menu em telas menores
     menuToggle.addEventListener('click', () => {
         sidebar.classList.toggle('active');
+        console.log('Menu toggle clicado, estado:', sidebar.classList.contains('active'));
     });
 
     // Função para gerenciar a navegação ativa
@@ -97,14 +106,15 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             navLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
-            if (link.textContent.trim() === 'Dashboard') {
+            const action = link.textContent.trim();
+            console.log('Navegação para:', action);
+            if (action === 'Dashboard') {
                 loadDashboard();
-            } else if (link.textContent.trim() === 'Usuários') {
+            } else if (action === 'Usuários') {
                 loadUsers();
             } else if (link.id === 'logout') {
                 handleLogout();
             }
-            // Fechar menu ao clicar em um link em telas menores
             if (window.innerWidth <= 768) {
                 sidebar.classList.remove('active');
             }
@@ -122,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mode: 'cors'
         })
         .then(response => {
-            console.log('Resposta recebida:', response.status, response.statusText);
+            console.log('Resposta do servidor:', response.status, response.statusText);
             if (!response.ok) {
                 throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
             }
@@ -137,14 +147,14 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(users => {
             hideLoading();
             if (!users || !Array.isArray(users)) {
-                console.log('Nenhum dado recebido ou formato inválido:', users);
+                console.warn('Dados inválidos ou ausentes:', users);
                 updateDashboardStats([]);
                 showError('Nenhum dado disponível.');
                 return;
             }
             allUsers = users;
             updateDashboardStats(users);
-            console.log('Dados do Dashboard:', users);
+            console.log('Dashboard atualizado com:', users);
         })
         .catch(error => {
             hideLoading();
@@ -165,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mode: 'cors'
         })
         .then(response => {
-            console.log('Resposta recebida:', response.status, response.statusText);
+            console.log('Resposta do servidor:', response.status, response.statusText);
             if (!response.ok) {
                 throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
             }
@@ -180,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(users => {
             hideLoading();
             if (!users || !Array.isArray(users)) {
-                console.log('Nenhum usuário encontrado ou dados inválidos:', users);
+                console.warn('Nenhum usuário encontrado ou dados inválidos:', users);
                 tableBody.innerHTML = '<tr><td colspan="8">Nenhum usuário encontrado.</td></tr>';
                 updateDashboardStats([]);
                 return;
@@ -188,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
             allUsers = users;
             updateDashboardStats(users);
             populateUserTable(users);
-            console.log('Dados dos Usuários:', users);
+            console.log('Usuários carregados:', users);
         })
         .catch(error => {
             hideLoading();
@@ -202,42 +212,36 @@ document.addEventListener('DOMContentLoaded', () => {
     // Função para atualizar estatísticas no painel
     function updateDashboardStats(users) {
         const totalUsers = users.length;
-        const totalBalance = users.reduce((sum, user) => sum + (user.balance || 0), 0);
-        const currentDate = new Date();
+        const totalBalance = users.reduce((sum, user) => {
+            const balance = parseFloat(user.balance) || 0;
+            console.log(`Usuário ${user.userId || 'sem ID'}: Saldo = ${balance}`);
+            return sum + balance;
+        }, 0);
+        const currentDate = new Date('2025-06-03T00:10:00-03:00'); // 12:10 AM -03, June 03, 2025
         const activeSubscriptions = users.filter(user => {
             if (!user.expirationDate) return false;
-            try {
-                const expiration = new Date(user.expirationDate);
-                return !isNaN(expiration.getTime()) && expiration > currentDate;
-            } catch (error) {
-                console.error(`Erro ao processar expirationDate:`, error);
-                return false;
-            }
+            const expiration = new Date(user.expirationDate);
+            return !isNaN(expiration.getTime()) && expiration > currentDate;
         }).length;
         const expiredSubscriptions = users.filter(user => {
             if (!user.expirationDate) return false;
-            try {
-                const expiration = new Date(user.expirationDate);
-                return !isNaN(expiration.getTime()) && expiration <= currentDate;
-            } catch (error) {
-                console.error(`Erro ao processar expirationDate:`, error);
-                return false;
-            }
+            const expiration = new Date(user.expirationDate);
+            return !isNaN(expiration.getTime()) && expiration <= currentDate;
         }).length;
 
-        totalUsersEl.textContent = totalUsers;
-        totalBalanceEl.textContent = totalBalance.toFixed(2);
-        activeSubscriptionsEl.textContent = activeSubscriptions;
-        expiredSubscriptionsEl.textContent = expiredSubscriptions;
+        totalUsersEl.textContent = totalUsers || '0';
+        totalBalanceEl.textContent = totalBalance.toFixed(2) || '0.00';
+        activeSubscriptionsEl.textContent = activeSubscriptions || '0';
+        expiredSubscriptionsEl.textContent = expiredSubscriptions || '0';
+        console.log('Estatísticas atualizadas:', { totalUsers, totalBalance, activeSubscriptions, expiredSubscriptions });
     }
 
     // Função para popular a tabela de usuários
     function populateUserTable(users) {
         tableBody.innerHTML = '';
         users.forEach(user => {
-            console.log('Processando usuário:', user.userId);
             const row = document.createElement('tr');
-            const balanceValue = user.balance || 0;
+            const balanceValue = parseFloat(user.balance) || 0;
             const expirationDate = user.expirationDate ? new Date(user.expirationDate) : null;
             const expirationValue = expirationDate ? expirationDate.toLocaleDateString('pt-BR') : '-';
             row.innerHTML = `
@@ -245,20 +249,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${user.name || '-'}</td>
                 <td>${user.whatsapp || '-'}</td>
                 <td>${user.registeredAt ? new Date(user.registeredAt).toLocaleDateString('pt-BR') : '-'}</td>
-                <td>${
-                    Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0
-                    ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${new Date(p.timestamp).toLocaleDateString('pt-BR')})`).join('<br>')
-                    : '-'
-                }</td>
+                <td>${Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0 ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${new Date(p.timestamp).toLocaleDateString('pt-BR')})`).join('<br>') : '-'}</td>
                 <td>${balanceValue.toFixed(2)}</td>
                 <td>${expirationValue}</td>
                 <td>
-                    <button class="edit-btn" onclick="openEditModal('${user.userId}', '${(user.name || '').replace(/'/g, "\\'")}', ${balanceValue}, '${user.expirationDate || ''}')"><i class="fas fa-edit"></i></button>
-                    <button class="delete-btn" onclick="openCancelModal('${user.userId}', '${(user.name || '').replace(/'/g, "\\'")}')"><i class="fas fa-times"></i></button>
+                    <button class="edit-btn" onclick="openEditModal('${user.userId || ''}', '${(user.name || '').replace(/'/g, "\\'")}', ${balanceValue}, '${user.expirationDate || ''}')"><i class="fas fa-edit"></i></button>
+                    <button class="delete-btn" onclick="openCancelModal('${user.userId || ''}', '${(user.name || '').replace(/'/g, "\\'")}')"><i class="fas fa-times"></i></button>
                 </td>
             `;
             tableBody.appendChild(row);
         });
+        console.log('Tabela de usuários populada com', users.length, 'entradas');
     }
 
     // Função para filtrar usuários com base na pesquisa
@@ -269,6 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
             (user.name && user.name.toLowerCase().includes(query))
         );
         populateUserTable(filteredUsers);
+        console.log('Usuários filtrados:', filteredUsers.length);
     }
 
     // Adicionar evento de pesquisa
@@ -279,8 +281,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedDate = new Date(editExpirationInput.value);
         if (selectedDate && !isNaN(selectedDate.getTime())) {
             updateDaysRemaining(selectedDate);
+            console.log('Data de expiração alterada para:', editExpirationInput.value);
         } else {
             editDaysRemainingInput.value = '0 dias';
+            console.log('Data de expiração inválida, resetada para 0 dias');
         }
     });
 
@@ -290,86 +294,92 @@ document.addEventListener('DOMContentLoaded', () => {
             if (editModal) editModal.style.display = 'none';
             if (cancelModal) cancelModal.style.display = 'none';
             currentUserId = null;
+            console.log('Modal fechado');
         });
     });
 
     // Salvar alterações
-    document.querySelector('.save-btn').addEventListener('click', () => {
-        const name = editNameInput.value;
-        const balance = parseFloat(editBalanceInput.value);
-        const expirationDate = editExpirationInput.value ? new Date(editExpirationInput.value).toISOString() : null;
+    const saveBtn = document.querySelector('.save-btn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+            const name = editNameInput.value.trim();
+            const balance = parseFloat(editBalanceInput.value);
+            const expirationDate = editExpirationInput.value ? new Date(editExpirationInput.value).toISOString() : null;
 
-        if (!name) {
-            alert('Nome não pode estar vazio.');
-            return;
-        }
-        if (isNaN(balance) || balance < 0) {
-            alert('Saldo inválido. Insira um número positivo.');
-            return;
-        }
-
-        fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include',
-            mode: 'cors',
-            body: JSON.stringify({
-                name: name,
-                balance: balance,
-                expirationDate: expirationDate
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.text().then(text => {
-                    throw new Error(`Erro na requisição: ${response.status} - ${response.statusText} - ${text}`);
-                });
+            if (!name) {
+                alert('Erro: Nome não pode estar vazio.');
+                return;
             }
-            return response.json();
-        })
-        .then(data => {
-            if (data.error) throw new Error(data.error);
-            alert('Dados atualizados com sucesso!');
-            editModal.style.display = 'none';
-            loadUsers();
-        })
-        .catch(error => {
-            console.error('Erro ao atualizar dados:', error);
-            alert('Erro ao atualizar dados: ' + error.message);
+            if (isNaN(balance) || balance < 0) {
+                alert('Erro: Saldo inválido. Insira um número positivo.');
+                return;
+            }
+
+            console.log('Salvando alterações para:', { userId: currentUserId, name, balance, expirationDate });
+            fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                mode: 'cors',
+                body: JSON.stringify({ name, balance, expirationDate })
+            })
+            .then(response => {
+                console.log('Resposta do servidor ao salvar:', response.status, response.statusText);
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`Erro: ${response.status} - ${text || response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                alert('Sucesso: Dados atualizados!');
+                editModal.style.display = 'none';
+                loadUsers();
+            })
+            .catch(error => {
+                console.error('Erro ao salvar:', error);
+                alert(`Erro ao atualizar dados: ${error.message}`);
+            });
         });
-    });
+    } else {
+        console.error('Erro: Botão "Salvar Alterações" não encontrado');
+    }
 
     // Cancelar assinatura
-    document.querySelector('.delete-btn').addEventListener('click', () => {
-        fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include',
-            mode: 'cors'
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.text().then(text => {
-                    throw new Error(`Erro na requisição: ${response.status} - ${response.statusText} - ${text}`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.error) throw new Error(data.error);
-            alert('Assinatura cancelada com sucesso!');
-            cancelModal.style.display = 'none';
-            loadUsers();
-        })
-        .catch(error => {
-            console.error('Erro ao cancelar assinatura:', error);
-            alert('Erro ao cancelar assinatura: ' + error.message);
+    const deleteBtn = document.querySelector('.delete-btn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => {
+            console.log('Cancelando assinatura para:', currentUserId);
+            fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                mode: 'cors'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`Erro: ${response.status} - ${text || response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                alert('Sucesso: Assinatura cancelada!');
+                cancelModal.style.display = 'none';
+                loadUsers();
+            })
+            .catch(error => {
+                console.error('Erro ao cancelar assinatura:', error);
+                alert(`Erro ao cancelar assinatura: ${error.message}`);
+            });
         });
-    });
+    } else {
+        console.error('Erro: Botão "Cancelar Assinatura" não encontrado');
+    }
 
     // Fechar modal ao clicar fora dele
     window.addEventListener('click', (event) => {
@@ -379,32 +389,39 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.target === cancelModal) {
             cancelModal.style.display = 'none';
         }
+        if (editModal.style.display === 'none' || cancelModal.style.display === 'none') {
+            currentUserId = null;
+            console.log('Modal fechado por clique fora');
+        }
     });
 
     // Função para mostrar estado de carregamento
     function showLoading() {
         loadingDiv.style.display = 'block';
         errorDiv.style.display = 'none';
+        console.log('Exibindo estado de carregamento');
     }
 
     // Função para ocultar estado de carregamento
     function hideLoading() {
         loadingDiv.style.display = 'none';
+        console.log('Ocultando estado de carregamento');
     }
 
     // Função para mostrar erro
     function showError(message) {
         errorDiv.textContent = message;
         errorDiv.style.display = 'block';
+        console.log('Erro exibido:', message);
     }
 
     // Função para logout (desativada, mas mantida para compatibilidade)
     function handleLogout() {
-        console.log('Logout desativado temporariamente.');
+        console.log('Logout solicitado (desativado temporariamente)');
         window.location.href = '/';
     }
 
-    // Adicionar evento de logout (mantido, mas não será funcional por agora)
+    // Adicionar evento de logout
     logoutBtn.addEventListener('click', handleLogout);
 
     // Inicializar com o Dashboard
