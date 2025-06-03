@@ -51,7 +51,7 @@ function updateDaysRemaining(expirationDate) {
         console.error('Erro: editDaysRemainingInput não encontrado');
         return;
     }
-    const currentDate = new Date(); // Usar a data e hora atuais
+    const currentDate = new Date();
     const diffTime = new Date(expirationDate) - currentDate;
     const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     editDaysRemainingInput.value = daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
@@ -67,7 +67,7 @@ function calculateDaysRemaining(expirationDate) {
             console.warn('Data de expiração inválida na tabela:', expirationDate);
             return '0 dias';
         }
-        const currentDate = new Date(); // Usar a data e hora atuais
+        const currentDate = new Date();
         const diffTime = expDate - currentDate;
         const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         return daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
@@ -262,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 totalBalance += balance;
             }
         });
-        const currentDate = new Date(); // Usar a data e hora atuais
+        const currentDate = new Date();
         const activeSubscriptions = users.filter(user => {
             if (!user.expirationDate) return false;
             const expiration = new Date(user.expirationDate);
@@ -418,9 +418,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Cancelar assinatura
-    const deleteBtn = document.querySelector('.delete-btn');
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', () => {
+    const cancelSubscriptionBtn = document.querySelector('.modal-footer .delete-btn'); // Selecionar o botão no modal
+    if (cancelSubscriptionBtn) {
+        cancelSubscriptionBtn.addEventListener('click', () => {
             console.log('Cancelando assinatura para:', currentUserId);
             fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
                 method: 'DELETE',
@@ -429,6 +429,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 mode: 'cors'
             })
             .then(response => {
+                console.log('Resposta do servidor ao deletar:', {
+                    status: response.status,
+                    statusText: response.statusText
+                });
                 if (!response.ok) {
                     return response.text().then(text => {
                         throw new Error(`Erro: ${response.status} - ${text || response.statusText}`);
@@ -448,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     } else {
-        console.error('Erro: Botão "Cancelar Assinatura" não encontrado');
+        console.error('Erro: Botão "Cancelar Assinatura" no modal não encontrado');
     }
 
     // Fechar modal ao clicar fora dele
