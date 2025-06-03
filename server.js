@@ -3,8 +3,6 @@ const { MongoClient, ObjectId } = require('mongodb');
 const path = require('path');
 require('dotenv').config();
 const cors = require('cors');
-// const session = require('express-session');
-// const MongoStore = require('connect-mongo');
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -33,6 +31,13 @@ async function connectDB() {
 
 let db;
 
+async function ensureDBConnection() {
+    if (!db) {
+        db = await connectDB();
+    }
+    return db;
+}
+
 // Configurar middleware
 app.use(cors({
     origin: 'https://site-moneybet.onrender.com',
@@ -42,86 +47,6 @@ app.use(cors({
 }));
 app.use(express.static(path.join(__dirname, '.')));
 app.use(express.json());
-
-// Removido o middleware de sessão por agora
-/*
-app.use(session({
-    secret: 'seu-segredo-aqui',
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-        mongoUrl: mongoUri,
-        collectionName: 'sessions',
-        ttl: 24 * 60 * 60
-    }),
-    cookie: {
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
-        sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000
-    }
-}));
-*/
-
-// Removido o middleware de autenticação
-/*
-const requireAuth = (req, res, next) => {
-    console.log('Verificando autenticação:', req.session ? req.session.isAuthenticated : 'req.session é undefined');
-    console.log('Cookies recebidos:', req.headers.cookie);
-    console.log('Session ID:', req.sessionID);
-    if (req.session && req.session.isAuthenticated) {
-        next();
-    } else {
-        console.log('Não autenticado, redirecionando para /login.html');
-        res.status(401).sendFile(path.join(__dirname, 'login.html'));
-    }
-};
-*/
-
-// Usuário e senha fixos (mantido para referência, mas não será usado agora)
-/*
-const ADMIN_CREDENTIALS = {
-    username: 'adm1',
-    password: 'Bueno00'
-};
-*/
-
-// Rota de login (mantida para compatibilidade, mas não será necessária)
-/*
-app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    console.log(`Tentativa de login: username=${username}`);
-
-    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-        req.session.isAuthenticated = true;
-        req.session.save(err => {
-            if (err) {
-                console.error('Erro ao salvar sessão:', err);
-                return res.status(500).json({ success: false, message: 'Erro ao salvar sessão' });
-            }
-            console.log('Login bem-sucedido, sessão criada:', req.sessionID);
-            res.json({ success: true, redirect: '/' });
-        });
-    } else {
-        console.log('Falha no login: credenciais inválidas');
-        res.status(401).json({ success: false, message: 'Usuário ou senha incorretos' });
-    }
-});
-*/
-
-// Rota de logout (mantida para compatibilidade, mas não será necessária)
-/*
-app.post('/logout', (req, res) => {
-    req.session.destroy(err => {
-        if (err) {
-            console.error('Erro ao fazer logout:', err);
-            return res.status(500).json({ success: false, message: 'Erro ao fazer logout' });
-        }
-        console.log('Logout bem-sucedido');
-        res.json({ success: true, redirect: '/login.html' });
-    });
-});
-*/
 
 // Rota para a raiz (/) que serve o index.html (sem autenticação)
 app.get('/', (req, res) => {
@@ -139,29 +64,35 @@ app.get('/health', (req, res) => {
 app.get('/users', async (req, res) => {
     try {
         console.log('Rota /users acessada');
-        if (!db) {
-            console.log('Inicializando conexão com o banco de dados');
-            db = await connectDB();
-        }
+        db = await ensureDBConnection();
         console.log('Buscando usuários na coleção registeredUsers');
         const users = await db.collection('registeredUsers').find().toArray();
         console.log(`Encontrados ${users.length} usuários`);
 
         const usersData = await Promise.all(users.map(async (user) => {
             console.log(`Processando usuário: ${user.userId}`);
-            const balance = await db.collection('userBalances').findOne({ userId: user.userId }) || { balance: 0 };
-            const expiration = await db.collection('expirationDates').findOne({ userId: user.userId }) || { expirationDate: null };
+            const balanceDoc = await db.collection('userBalances').findOne({ userId: user.userId });
+            if (!balanceDoc) {
+                console.warn(`Nenhum saldo encontrado para usuário ${user.userId}, usando 0`);
+            }
+            const expirationDoc = await db.collection('expirationDates').findOne({ userId: user.userId });
+            if (!expirationDoc) {
+                console.warn(`Nenhuma data de expiração encontrada para usuário ${user.userId}`);
+            }
             return {
                 userId: user.userId,
                 name: user.name,
                 whatsapp: user.whatsapp,
                 registeredAt: user.registeredAt,
                 paymentHistory: user.paymentHistory || [],
-                balance: balance.balance,
-                expirationDate: expiration.expirationDate
+                balance: balanceDoc ? parseFloat(balanceDoc.balance) || 0 : 0,
+                expirationDate: expirationDoc ? expirationDoc.expirationDate : null
             };
         }));
 
+        if (usersData.every(user => user.balance === 0)) {
+            console.warn('Todos os usuários têm saldo 0, verificando dados');
+        }
         console.log('Enviando resposta com os dados dos usuários:', usersData);
         res.setHeader('Content-Type', 'application/json');
         res.json(usersData);
@@ -175,10 +106,7 @@ app.get('/users', async (req, res) => {
 app.get('/user/:userId', async (req, res) => {
     try {
         console.log(`Rota /user/${req.params.userId} acessada`);
-        if (!db) {
-            console.log('Inicializando conexão com o banco de dados');
-            db = await connectDB();
-        }
+        db = await ensureDBConnection();
         const userId = req.params.userId;
 
         const balance = await db.collection('userBalances').findOne({ userId: userId }) || { balance: 0 };
@@ -199,18 +127,15 @@ app.get('/user/:userId', async (req, res) => {
 app.put('/user/:userId', async (req, res) => {
     try {
         console.log(`Rota PUT /user/${req.params.userId} acessada`);
-        if (!db) {
-            console.log('Inicializando conexão com o banco de dados');
-            db = await connectDB();
-        }
+        db = await ensureDBConnection();
         const userId = req.params.userId;
         const { name, balance, expirationDate } = req.body;
 
-        if (balance !== undefined && (isNaN(balance) || balance < 0)) {
+        if (balance !== undefined && (isNaN(parseFloat(balance)) || parseFloat(balance) < 0)) {
             return res.status(400).json({ error: 'Saldo deve ser um número positivo' });
         }
-        if (expirationDate && isNaN(Date.parse(expirationDate))) {
-            return res.status(400).json({ error: 'Data inválida' });
+        if (expirationDate !== undefined && expirationDate !== null && isNaN(Date.parse(expirationDate))) {
+            return res.status(400).json({ error: 'Data de expiração inválida' });
         }
 
         // Atualizar nome na coleção registeredUsers
@@ -241,14 +166,23 @@ app.put('/user/:userId', async (req, res) => {
             } else {
                 await db.collection('expirationDates').updateOne(
                     { userId: userId },
-                    { $set: { expirationDate: new Date(expirationDate).getTime() } },
+                    { $set: { expirationDate: new Date(expirationDate).toISOString() } },
                     { upsert: true }
                 );
             }
         }
 
+        // Retornar dados atualizados
+        const updatedBalance = await db.collection('userBalances').findOne({ userId: userId }) || { balance: 0 };
+        const updatedExpiration = await db.collection('expirationDates').findOne({ userId: userId }) || { expirationDate: null };
         res.setHeader('Content-Type', 'application/json');
-        res.json({ message: 'Dados atualizados com sucesso' });
+        res.json({
+            message: 'Dados atualizados com sucesso',
+            updatedData: {
+                balance: updatedBalance.balance,
+                expirationDate: updatedExpiration.expirationDate
+            }
+        });
     } catch (err) {
         console.error('Erro na rota PUT /user/:userId:', err.message);
         res.status(500).json({ error: 'Erro ao atualizar dados', details: err.message });
@@ -259,10 +193,7 @@ app.put('/user/:userId', async (req, res) => {
 app.delete('/user/:userId', async (req, res) => {
     try {
         console.log(`Rota DELETE /user/${req.params.userId} acessada`);
-        if (!db) {
-            console.log('Inicializando conexão com o banco de dados');
-            db = await connectDB();
-        }
+        db = await ensureDBConnection();
         const userId = req.params.userId;
 
         // Remover data de expiração para cancelar assinatura

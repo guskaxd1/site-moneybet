@@ -39,7 +39,7 @@ function updateDaysRemaining(expirationDate) {
         console.error('Erro: editDaysRemainingInput não encontrado');
         return;
     }
-    const currentDate = new Date('2025-06-03T00:15:00-03:00'); // 12:15 AM -03, June 03, 2025
+    const currentDate = new Date('2025-06-03T00:21:00-03:00'); // 12:21 AM -03, June 03, 2025
     const diffTime = new Date(expirationDate) - currentDate;
     const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     editDaysRemainingInput.value = daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 totalBalance += balance;
             }
         });
-        const currentDate = new Date('2025-06-03T00:15:00-03:00'); // 12:15 AM -03, June 03, 2025
+        const currentDate = new Date('2025-06-03T00:21:00-03:00'); // 12:21 AM -03, June 03, 2025
         const activeSubscriptions = users.filter(user => {
             if (!user.expirationDate) return false;
             const expiration = new Date(user.expirationDate);
@@ -356,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.error) throw new Error(data.error);
                 alert('Sucesso: Dados atualizados!');
                 editModal.style.display = 'none';
-                loadUsers();
+                loadUsers(); // Reload to reflect changes
             })
             .catch(error => {
                 console.error('Erro ao salvar:', error);
