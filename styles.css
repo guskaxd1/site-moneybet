@@ -33,6 +33,10 @@ body {
     background-color: #1a252f;
 }
 
+.sidebar-header h2 {
+    font-size: 20px;
+}
+
 .sidebar-nav ul {
     list-style: none;
     padding: 15px 0;
