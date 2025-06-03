@@ -72,20 +72,25 @@ app.get('/users', async (req, res) => {
         const usersData = await Promise.all(users.map(async (user) => {
             console.log(`Processando usuário: ${user.userId}`);
             const balanceDoc = await db.collection('userBalances').findOne({ userId: user.userId });
-            if (!balanceDoc) {
-                console.warn(`Nenhum saldo encontrado para usuário ${user.userId}, usando 0`);
-            }
             const expirationDoc = await db.collection('expirationDates').findOne({ userId: user.userId });
-            if (!expirationDoc) {
-                console.warn(`Nenhuma data de expiração encontrada para usuário ${user.userId}`);
+
+            // Calcular balance como a soma dos amounts do paymentHistory
+            let balance = balanceDoc ? parseFloat(balanceDoc.balance) || 0 : 0;
+            if (Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0) {
+                const paymentTotal = user.paymentHistory.reduce((sum, payment) => sum + (parseFloat(payment.amount) || 0), 0);
+                console.log(`Soma de paymentHistory para ${user.userId}: ${paymentTotal}`);
+                balance = paymentTotal; // Override balance with payment total
+            } else if (!balanceDoc) {
+                console.warn(`Nenhum saldo ou paymentHistory encontrado para usuário ${user.userId}, usando 0`);
             }
+
             return {
                 userId: user.userId,
                 name: user.name,
                 whatsapp: user.whatsapp,
                 registeredAt: user.registeredAt,
                 paymentHistory: user.paymentHistory || [],
-                balance: balanceDoc ? parseFloat(balanceDoc.balance) || 0 : 0,
+                balance: balance,
                 expirationDate: expirationDoc ? expirationDoc.expirationDate : null
             };
         }));
