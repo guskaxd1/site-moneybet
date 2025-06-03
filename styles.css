@@ -437,3 +437,9 @@ tr:hover {
         font-size: 14px;
     }
 }
+.delete-user-box {
+    border: 1px solid #dc3545;
+    padding: 10px;
+    background-color: #f8d7da;
+    border-radius: 5px;
+}
