@@ -8,6 +8,7 @@
 
 body {
     background-color: #f4f4f4;
+    overflow-x: hidden; /* Evita scroll horizontal indesejado */
 }
 
 /* Layout principal */
@@ -16,25 +17,42 @@ body {
     min-height: 100vh;
 }
 
-/* Menu lateral */
+/* Menu lateral - Barrinha colapsável */
 .sidebar {
-    width: 200px;
+    width: 50px; /* Largura inicial (barrinha) */
     background-color: #2c3e50;
     color: #ecf0f1;
     height: 100vh;
     position: fixed;
-    transition: transform 0.3s ease;
-    z-index: 1000;
+    transition: width 0.3s ease; /* Transição suave para expansão */
+    z-index: 900; /* Abaixo do header */
+    overflow: hidden; /* Esconde conteúdo quando colapsado */
+}
+
+.sidebar.active {
+    width: 200px; /* Largura expandida */
+    overflow: visible; /* Mostra conteúdo ao expandir */
 }
 
 .sidebar-header {
     padding: 15px;
     text-align: center;
     background-color: #1a252f;
+    height: 60px; /* Altura fixa para o header */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .sidebar-header h2 {
     font-size: 20px;
+    white-space: nowrap; /* Impede quebra de linha */
+    opacity: 0; /* Oculta o texto quando colapsado */
+    transition: opacity 0.3s ease;
+}
+
+.sidebar.active .sidebar-header h2 {
+    opacity: 1; /* Mostra o texto ao expandir */
 }
 
 .sidebar-nav ul {
@@ -50,6 +68,12 @@ body {
     color: #95a5a6;
     font-size: 12px;
     padding: 8px 15px;
+    opacity: 0; /* Oculta quando colapsado */
+    transition: opacity 0.3s ease;
+}
+
+.sidebar.active .sidebar-nav h3 {
+    opacity: 1; /* Mostra ao expandir */
 }
 
 .sidebar-nav a {
@@ -60,10 +84,16 @@ body {
     padding: 8px 15px;
     font-size: 14px;
     transition: background 0.3s;
+    opacity: 0; /* Oculta texto e ícones quando colapsado */
+    white-space: nowrap; /* Impede quebra de linha */
 }
 
 .sidebar-nav a i {
     margin-right: 8px;
+}
+
+.sidebar.active .sidebar-nav a {
+    opacity: 1; /* Mostra ao expandir */
 }
 
 .sidebar-nav a:hover,
@@ -71,20 +101,17 @@ body {
     background-color: #34495e;
 }
 
-/* Botão de menu para mobile */
+/* Botão de menu integrado ao header */
 .menu-toggle {
-    display: none;
-    position: fixed;
-    top: 10px;
-    left: 10px;
     background: #2c3e50;
     color: #ecf0f1;
     border: none;
     padding: 10px;
     font-size: 20px;
     cursor: pointer;
-    z-index: 1001;
     border-radius: 4px;
+    margin-right: 15px;
+    z-index: 1000; /* Acima da sidebar */
 }
 
 .menu-toggle:hover {
@@ -93,10 +120,15 @@ body {
 
 /* Conteúdo principal */
 .main-content {
-    margin-left: 200px;
+    margin-left: 50px; /* Margem inicial para a barrinha */
     padding: 20px;
-    width: calc(100% - 200px);
-    transition: margin-left 0.3s ease, width 0.3s ease;
+    width: calc(100% - 50px); /* Ajusta a largura inicial */
+    transition: margin-left 0.3s ease, width 0.3s ease; /* Transição suave */
+}
+
+.sidebar.active ~ .main-content {
+    margin-left: 200px; /* Ajusta margem ao expandir */
+    width: calc(100% - 200px); /* Ajusta largura ao expandir */
 }
 
 /* Header */
@@ -107,10 +139,18 @@ header {
     margin-bottom: 20px;
     flex-wrap: wrap;
     gap: 10px;
+    background: #fff;
+    padding: 10px 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000; /* Acima da sidebar */
+    position: relative;
 }
 
 header h1 {
     font-size: 24px;
+    text-align: center;
+    flex-grow: 1;
+    margin: 0;
 }
 
 .logout-btn {
@@ -160,6 +200,11 @@ header h1 {
 }
 
 /* Tabela */
+.table-container {
+    position: relative;
+    overflow-x: auto;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -171,7 +216,7 @@ table {
 
 th, td {
     padding: 15px;
-    text-align: left;
+    text-align: center;
     border-bottom: 1px solid #ddd;
 }
 
@@ -233,20 +278,6 @@ tr:hover {
 }
 
 /* Modal */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
 .modal-content {
     background: #fff;
     width: 100%;
@@ -265,25 +296,9 @@ tr:hover {
     align-items: center;
 }
 
-.cancel-header {
-    background: #e74c3c;
-}
-
 .modal-header h5 {
     font-size: 18px;
     margin: 0;
-}
-
-.modal-close {
-    cursor: pointer;
-    font-size: 24px;
-    background: none;
-    border: none;
-    color: #fff;
-}
-
-.modal-close:hover {
-    color: #ddd;
 }
 
 .modal-body {
@@ -332,52 +347,6 @@ tr:hover {
     border-top: 1px solid #ddd;
 }
 
-.modal-btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.3s ease;
-    min-width: 120px;
-}
-
-.cancel-btn {
-    background: #95a5a6;
-    color: #fff;
-}
-
-.cancel-btn:hover {
-    background: #7f8c8d;
-}
-
-.save-btn {
-    background: #3498db;
-    color: #fff;
-}
-
-.save-btn:hover {
-    background: #2980b9;
-}
-
-.delete-btn {
-    background: #e74c3c;
-    color: #fff;
-}
-
-.delete-btn:hover {
-    background: #c0392b;
-}
-
-.delete-all-btn {
-    background: #e74c3c;
-    color: #fff;
-}
-
-.delete-all-btn:hover {
-    background: #c0392b;
-}
-
 /* Modal Field */
 .modal-field {
     margin-bottom: 15px;
@@ -407,12 +376,11 @@ tr:hover {
 /* Responsividade */
 @media (max-width: 1024px) {
     .sidebar {
-        width: 160px;
+        width: 50px;
     }
 
-    .main-content {
-        margin-left: 160px;
-        width: calc(100% - 160px);
+    .sidebar.active {
+        width: 200px;
     }
 
     .panel-card {
@@ -423,44 +391,13 @@ tr:hover {
         font-size: 14px;
     }
 
-    th, td {
+    th,
+    td {
         padding: 10px;
-    }
-
-    .sidebar-nav a {
-        font-size: 13px;
-        padding: 6px 12px;
-    }
-
-    .sidebar-nav li {
-        padding: 6px 12px;
-    }
-
-    .sidebar-nav h3 {
-        font-size: 11px;
-        padding: 6px 12px;
     }
 }
 
 @media (max-width: 768px) {
-    .sidebar {
-        transform: translateX(-100%);
-        width: 200px;
-    }
-
-    .sidebar.active {
-        transform: translateX(0);
-    }
-
-    .main-content {
-        margin-left: 0;
-        width: 100%;
-    }
-
-    .menu-toggle {
-        display: block;
-    }
-
     .admin-panel {
         grid-template-columns: 1fr;
     }
@@ -470,11 +407,17 @@ tr:hover {
     }
 
     .container {
-        overflow-x: auto;
+        padding: 0;
     }
 
     table {
         min-width: 800px;
+        font-size: 12px;
+    }
+
+    th,
+    td {
+        padding: 8px;
     }
 
     header h1 {
@@ -489,59 +432,57 @@ tr:hover {
     .modal-content {
         max-width: 90%;
     }
+
+    .action-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+        margin-right: 2px;
+    }
+
+    .menu-toggle {
+        padding: 8px;
+        font-size: 18px;
+    }
 }
 
 @media (max-width: 480px) {
     header {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 10px;
+    }
+
+    header h1 {
+        font-size: 18px;
+        flex-grow: 1;
+        text-align: center;
     }
 
     .logout-btn {
-        align-self: flex-end;
+        padding: 6px 12px;
+        font-size: 10px;
+    }
+
+    .menu-toggle {
+        padding: 6px;
+        font-size: 16px;
+        margin-right: 10px;
     }
 
     .panel-card p {
         font-size: 20px;
     }
+}
 
-    .modal-header h5 {
-        font-size: 16px;
-    }
-
-    .modal-btn {
-        padding: 8px 16px;
-        font-size: 12px;
-        min-width: 100px;
-    }
-
-    .modal-footer {
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .modal-btn {
-        width: 100%;
-    }
-
-    .confirmation-text {
-        font-size: 14px;
-    }
-
-    .delete-title {
-        font-size: 14px;
-    }
-
-    .delete-warning {
-        font-size: 12px;
-    }
-
-    .action-btn {
-        padding: 6px 10px;
-        font-size: 12px;
-        margin-right: 5px;
+@media (max-width: 600px) {
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
     }
 }
+
 .modal-backdrop {
     display: none !important;
 }
