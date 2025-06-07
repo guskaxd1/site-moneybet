@@ -19,6 +19,11 @@ app.use(cors({ origin: 'https://site-moneybet.onrender.com', credentials: true }
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Rota raiz para servir index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 async function connectDB() {
     try {
         await client.connect();
