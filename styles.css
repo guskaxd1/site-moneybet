@@ -28,7 +28,6 @@ body {
     z-index: 900; /* Abaixo do header */
     overflow: hidden; /* Esconde conteúdo quando colapsado */
 }
-
 .sidebar.active {
     width: 200px; /* Largura expandida */
     overflow: visible; /* Mostra conteúdo ao expandir */
