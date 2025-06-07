@@ -91,7 +91,6 @@ function openCancelModal(userId, name) {
     // Associar o evento ao botão "Cancelar Assinatura"
     const cancelSubscriptionBtn = document.querySelector('#cancelModal .delete-btn');
     if (cancelSubscriptionBtn) {
-        // Clonar o botão para evitar múltiplos event listeners
         const newCancelBtn = cancelSubscriptionBtn.cloneNode(true);
         cancelSubscriptionBtn.parentNode.replaceChild(newCancelBtn, cancelSubscriptionBtn);
         
@@ -109,14 +108,9 @@ function openCancelModal(userId, name) {
                 mode: 'cors'
             })
             .then(response => {
-                console.log('Resposta do servidor ao cancelar assinatura:', {
-                    status: response.status,
-                    statusText: response.statusText
-                });
+                console.log('Resposta do servidor ao cancelar assinatura:', { status: response.status, statusText: response.statusText });
                 if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.message || `Erro: ${response.status} - ${response.statusText}`);
-                    });
+                    return response.json().then(data => { throw new Error(data.message || `Erro: ${response.status} - ${response.statusText}`); });
                 }
                 return response.json();
             })
@@ -139,7 +133,6 @@ function openCancelModal(userId, name) {
     // Associar o evento ao botão "Excluir Todos os Dados"
     const deleteAllBtn = document.querySelector('#cancelModal .delete-all-btn');
     if (deleteAllBtn) {
-        // Clonar o botão para evitar múltiplos event listeners
         const newDeleteAllBtn = deleteAllBtn.cloneNode(true);
         deleteAllBtn.parentNode.replaceChild(newDeleteAllBtn, deleteAllBtn);
 
@@ -161,14 +154,9 @@ function openCancelModal(userId, name) {
                 mode: 'cors'
             })
             .then(response => {
-                console.log('Resposta do servidor ao excluir todos os dados:', {
-                    status: response.status,
-                    statusText: response.statusText
-                });
+                console.log('Resposta do servidor ao excluir todos os dados:', { status: response.status, statusText: response.statusText });
                 if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.message || `Erro: ${response.status} - ${response.statusText}`);
-                    });
+                    return response.json().then(data => { throw new Error(data.message || `Erro: ${response.status} - ${response.statusText}`); });
                 }
                 return response.json();
             })
@@ -225,10 +213,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Alternar menu em telas menores
-menuToggle.addEventListener('click', () => {
-    sidebar.classList.toggle('active');
-    console.log('Menu toggle clicado, estado:', sidebar.classList.contains('active'));
-});
+    menuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+        console.log('Menu toggle clicado, estado:', sidebar.classList.contains('active'));
+    });
 
     // Função para gerenciar a navegação ativa
     const navLinks = document.querySelectorAll('.sidebar-nav a');
@@ -243,6 +231,8 @@ menuToggle.addEventListener('click', () => {
                 loadDashboard();
             } else if (action === 'Usuários') {
                 loadUsers();
+            } else if (action === 'Usuários Registrados') {
+                loadRegisteredUsers();
             } else if (link.id === 'logout') {
                 handleLogout();
             }
@@ -349,6 +339,68 @@ menuToggle.addEventListener('click', () => {
             updateDashboardStats([]);
             showError(`Erro ao carregar usuários: ${error.message}`);
             alert(`Erro ao carregar usuários: ${error.message}`);
+        });
+    }
+
+    // Função para carregar Usuários Registrados (somente registrados e sem pagamento)
+    function loadRegisteredUsers() {
+        console.log('Carregando Usuários Registrados...');
+        showLoading();
+        searchContainer.style.display = 'block';
+        usersTable.style.display = 'table';
+        fetch('https://site-moneybet.onrender.com/users', {
+            credentials: 'include',
+            mode: 'cors'
+        })
+        .then(response => {
+            console.log('Resposta do servidor para Usuários Registrados:', {
+                status: response.status,
+                statusText: response.statusText,
+                headers: Object.fromEntries(response.headers.entries())
+            });
+            if (!response.ok) {
+                throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
+            }
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error(`Resposta não é JSON: ${text.substring(0, 50)}...`);
+                });
+            }
+            return response.json();
+        })
+        .then(users => {
+            console.log('Dados brutos recebidos:', users);
+            hideLoading();
+            if (!users || !Array.isArray(users)) {
+                console.warn('Nenhum usuário encontrado ou dados inválidos:', users);
+                tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário registrado encontrado.</td></tr>';
+                updateDashboardStats([]);
+                return;
+            }
+            allUsers = users;
+            // Filtrar usuários registrados sem pagamento (sem paymentHistory ou saldo zero e sem expirationDate)
+            const registeredUsers = users.filter(user => {
+                const hasNoPaymentHistory = !user.paymentHistory || user.paymentHistory.length === 0;
+                const hasNoBalance = !user.balance || parseFloat(user.balance) === 0;
+                const hasNoExpiration = !user.expirationDate;
+                return hasNoPaymentHistory && hasNoBalance && hasNoExpiration;
+            });
+            if (registeredUsers.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário registrado sem pagamento encontrado.</td></tr>';
+            } else {
+                populateUserTable(registeredUsers);
+            }
+            updateDashboardStats(registeredUsers); // Atualiza stats apenas com os filtrados
+            console.log('Usuários registrados carregados:', registeredUsers);
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Erro ao carregar Usuários Registrados:', error);
+            tableBody.innerHTML = `<tr><td colspan="9">Erro: ${error.message}</td></tr>`;
+            updateDashboardStats([]);
+            showError(`Erro ao carregar usuários registrados: ${error.message}`);
+            alert(`Erro ao carregar usuários registrados: ${error.message}`);
         });
     }
 
