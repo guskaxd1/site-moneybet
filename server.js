@@ -40,12 +40,12 @@ async function ensureDBConnection() {
 
 // Configurar middleware
 app.use(cors({
-    origin: '*', // Permitir qualquer origem durante o desenvolvimento
+    origin: '*',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     exposedHeaders: ['Set-Cookie']
 }));
-app.use(express.static(path.join(__dirname, 'public'))); // Servir arquivos estáticos da pasta public
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
 // Rota para a raiz (/) que serve o index.html
@@ -72,12 +72,16 @@ app.get('/users', async (req, res) => {
         db = await ensureDBConnection();
         console.log('Buscando usuários na coleção registeredUsers');
         const users = await db.collection('registeredUsers').find().toArray();
-        console.log(`Encontrados ${users.length} usuários`);
+        console.log(`Encontrados ${users.length} usuários no registeredUsers`);
+
+        if (users.length === 0) {
+            console.warn('Nenhum usuário encontrado na coleção registeredUsers');
+            return res.status(200).json({ users: [], totalBalanceFromHistory: "0.00" });
+        }
 
         const usersData = await Promise.all(users.map(async (user) => {
             console.log(`Processando usuário: ${user.userId}`);
             const paymentHistory = user.paymentHistory || [];
-            const balanceDoc = await db.collection('userBalances').findOne({ userId: user.userId }) || { balance: 0 };
             const expirationDoc = await db.collection('expirationDates').findOne({ userId: user.userId }) || { expirationDate: null };
 
             return {
@@ -87,7 +91,7 @@ app.get('/users', async (req, res) => {
                 registeredAt: user.registeredAt,
                 paymentHistory: paymentHistory,
                 balance: 0, // Força saldo zerado
-                expirationDate: expirationDoc ? expirationDoc.expirationDate : null
+                expirationDate: expirationDoc.expirationDate
             };
         }));
 
@@ -118,7 +122,6 @@ app.get('/user/:userId', async (req, res) => {
 
         const user = await db.collection('registeredUsers').findOne({ userId: userId }) || {};
         const paymentHistory = user.paymentHistory || [];
-        const balanceDoc = await db.collection('userBalances').findOne({ userId: userId }) || { balance: 0 };
         const expirationDoc = await db.collection('expirationDates').findOne({ userId: userId }) || { expirationDate: null };
 
         res.setHeader('Content-Type', 'application/json');
@@ -156,7 +159,6 @@ app.put('/user/:userId', async (req, res) => {
             console.log('Resultado da atualização de nome:', result);
         }
 
-        // Ignorar atualizações de saldo, manter zerado
         if (balance !== undefined) {
             console.warn('Atualização de saldo ignorada, mantendo saldo zerado');
         }
@@ -222,7 +224,7 @@ app.post('/user/:userId/pay', async (req, res) => {
         console.log(`Registrando pagamento de ${amount} para o usuário ${userId}`);
         const result = await db.collection('registeredUsers').updateOne(
             { userId: userId },
-            { $push: { paymentHistory: payment }, $set: { balance: 0 } }, // Mantém balance zerado
+            { $push: { paymentHistory: payment }, $set: { balance: 0 } },
             { upsert: true }
         );
         console.log('Resultado do registro de pagamento:', result);
@@ -234,7 +236,7 @@ app.post('/user/:userId/pay', async (req, res) => {
             updatedData: {
                 userId: userId,
                 paymentHistory: updatedUser.paymentHistory || [],
-                balance: 0 // Força saldo zerado
+                balance: 0
             }
         });
     } catch (err) {
