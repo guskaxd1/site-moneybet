@@ -1,14 +1,13 @@
 const express = require('express');
-const { MongoClient, ObjectId } = require('mongodb');
-const path = require('path');
-require('dotenv').config();
 const cors = require('cors');
+const path = require('path');
+const { MongoClient, ObjectId } = require('mongodb');
+require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 8080;
 
 const mongoUri = process.env.MONGO_URI;
-
 if (!mongoUri) {
     console.error('Erro: MONGO_URI não está definido no arquivo .env');
     process.exit(1);
@@ -16,343 +15,143 @@ if (!mongoUri) {
 
 const client = new MongoClient(mongoUri);
 
+app.use(cors({ origin: 'https://site-moneybet.onrender.com', credentials: true }));
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
 async function connectDB() {
     try {
         await client.connect();
-        console.log('Conectado ao MongoDB com sucesso');
-        const db = client.db('moneybet');
-        console.log('Banco de dados selecionado:', db.databaseName);
-        return db;
+        console.log('Conectado ao MongoDB');
     } catch (err) {
-        console.error('Erro ao conectar ao MongoDB:', err.message);
+        console.error('Erro ao conectar ao MongoDB:', err);
         process.exit(1);
     }
 }
 
-let db;
+connectDB();
 
-async function ensureDBConnection() {
-    if (!db) {
-        db = await connectDB();
-    }
-    return db;
-}
+const db = client.db('moneybet');
+const registeredUsers = db.collection('registeredUsers');
 
-// Configurar middleware
-app.use(cors({
-    origin: '*', // Permitir qualquer origem durante o desenvolvimento
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    exposedHeaders: ['Set-Cookie']
-}));
-app.use(express.static(path.join(__dirname, '.')));
-app.use(express.json());
-
-// Rota para a raiz (/) que serve o index.html (sem autenticação)
-app.get('/', (req, res) => {
-    console.log('Rota / acessada');
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// Rota de teste para verificar se o servidor está funcionando
-app.get('/health', (req, res) => {
-    console.log('Rota /health acessada');
-    res.json({ status: 'Servidor está rodando' });
-});
-
-// Rota para buscar todos os usuários (sem autenticação)
 app.get('/users', async (req, res) => {
     try {
-        console.log('Rota /users acessada');
-        db = await ensureDBConnection();
-        console.log('Buscando usuários na coleção registeredUsers');
-        const users = await db.collection('registeredUsers').find().toArray();
-        console.log(`Encontrados ${users.length} usuários`);
-
-        const usersData = await Promise.all(users.map(async (user) => {
-            console.log(`Processando usuário: ${user.userId}`);
-            const balanceDoc = await db.collection('userBalances').findOne({ userId: user.userId }) || { balance: 0 };
-            const expirationDoc = await db.collection('expirationDates').findOne({ userId: user.userId }) || { expirationDate: null };
-
-            return {
-                userId: user.userId,
-                name: user.name,
-                whatsapp: user.whatsapp,
-                registeredAt: user.registeredAt,
-                paymentHistory: user.paymentHistory || [],
-                balance: balanceDoc.balance,
-                expirationDate: expirationDoc ? expirationDoc.expirationDate : null
-            };
-        }));
-
-        console.log('Enviando resposta com os dados dos usuários:', usersData);
-        res.setHeader('Content-Type', 'application/json');
-        res.json(usersData);
+        const users = await registeredUsers.find({}).toArray();
+        const totalBalanceFromHistory = users.reduce((sum, user) => {
+            const paymentHistory = user.paymentHistory || [];
+            return sum + paymentHistory.reduce((total, payment) => total + (parseFloat(payment.amount) || 0), 0);
+        }, 0);
+        res.json(users.map(user => ({
+            ...user,
+            balance: 0, // Força saldo zerado
+            totalBalanceFromHistory // Adiciona para referência (opcional)
+        })));
     } catch (err) {
-        console.error('Erro na rota /users:', err.message);
-        res.status(500).json({ error: 'Erro ao buscar usuários', details: err.message });
+        console.error('Erro ao buscar usuários:', err);
+        res.status(500).json({ error: 'Erro ao buscar usuários' });
     }
 });
 
-// Rota para buscar dados de um único usuário (sem autenticação)
-app.get('/user/:userId', async (req, res) => {
+app.get('/user/:id', async (req, res) => {
     try {
-        console.log(`Rota /user/${req.params.userId} acessada`);
-        db = await ensureDBConnection();
-        const userId = req.params.userId;
-
-        const balance = await db.collection('userBalances').findOne({ userId: userId }) || { balance: 0 };
-        const expiration = await db.collection('expirationDates').findOne({ userId: userId }) || { expirationDate: null };
-
-        res.setHeader('Content-Type', 'application/json');
-        res.json({
-            balance: balance.balance,
-            expirationDate: expiration.expirationDate
-        });
+        const user = await registeredUsers.findOne({ userId: req.params.id });
+        if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+        res.json({ ...user, balance: 0 }); // Força saldo zerado
     } catch (err) {
-        console.error('Erro na rota /user/:userId:', err.message);
-        res.status(500).json({ error: 'Erro ao buscar dados', details: err.message });
+        console.error('Erro ao buscar usuário:', err);
+        res.status(500).json({ error: 'Erro ao buscar usuário' });
     }
 });
 
-// Rota para atualizar dados do usuário (sem autenticação)
-app.put('/user/:userId', async (req, res) => {
+app.post('/user', async (req, res) => {
     try {
-        console.log(`Rota PUT /user/${req.params.userId} acessada`);
-        db = await ensureDBConnection();
-        const userId = req.params.userId;
+        const { userId, name, whatsapp } = req.body;
+        const existingUser = await registeredUsers.findOne({ userId });
+        if (existingUser) return res.status(400).json({ error: 'Usuário já existe' });
+
+        const newUser = { userId, name, whatsapp, registeredAt: new Date(), paymentHistory: [], balance: 0, expirationDate: null };
+        await registeredUsers.insertOne(newUser);
+        res.status(201).json(newUser);
+    } catch (err) {
+        console.error('Erro ao criar usuário:', err);
+        res.status(500).json({ error: 'Erro ao criar usuário' });
+    }
+});
+
+app.put('/user/:id', async (req, res) => {
+    try {
         const { name, balance, expirationDate } = req.body;
-
-        console.log('Dados recebidos:', { name, balance, expirationDate });
-
-        if (balance !== undefined && (isNaN(parseFloat(balance)) || parseFloat(balance) < 0)) {
-            console.warn('Validação falhou: Saldo deve ser um número positivo');
-            return res.status(400).json({ error: 'Saldo deve ser um número positivo' });
-        }
-
-        let parsedExpirationDate = null;
-        if (expirationDate !== undefined && expirationDate !== null) {
-            try {
-                parsedExpirationDate = new Date(expirationDate);
-                if (isNaN(parsedExpirationDate.getTime())) {
-                    console.warn('Validação falhou: Data de expiração inválida', { expirationDate });
-                    return res.status(400).json({ error: 'Data de expiração inválida' });
-                }
-            } catch (err) {
-                console.warn('Erro ao parsear expirationDate:', err.message, { expirationDate });
-                return res.status(400).json({ error: 'Formato de data inválido' });
-            }
-        }
-
-        if (name) {
-            console.log(`Atualizando nome do usuário ${userId} para ${name}`);
-            const result = await db.collection('registeredUsers').updateOne(
-                { userId: userId },
-                { $set: { name: name } },
-                { upsert: true }
-            );
-            console.log('Resultado da atualização de nome:', result);
-        }
-
-        if (balance !== undefined) {
-            console.log(`Atualizando saldo do usuário ${userId} para ${balance}`);
-            const result = await db.collection('userBalances').updateOne(
-                { userId: userId },
-                { $set: { balance: parseFloat(balance) } },
-                { upsert: true }
-            );
-            console.log('Resultado da atualização de saldo:', result);
-        }
-
-        if (expirationDate !== undefined) {
-            console.log(`Atualizando data de expiração do usuário ${userId} para ${expirationDate}`);
-            if (expirationDate === null) {
-                const result = await db.collection('expirationDates').deleteOne({ userId: userId });
-                console.log('Resultado da exclusão de data de expiração:', result);
-            } else {
-                const result = await db.collection('expirationDates').updateOne(
-                    { userId: userId },
-                    { $set: { expirationDate: parsedExpirationDate.toISOString() } },
-                    { upsert: true }
-                );
-                console.log('Resultado da atualização de data de expiração:', result);
-            }
-        }
-
-        const updatedBalance = await db.collection('userBalances').findOne({ userId: userId }) || { balance: 0 };
-        const updatedExpiration = await db.collection('expirationDates').findOne({ userId: userId }) || { expirationDate: null };
-        const updatedUser = await db.collection('registeredUsers').findOne({ userId: userId });
-        res.setHeader('Content-Type', 'application/json');
-        res.json({
-            message: 'Dados atualizados com sucesso',
-            updatedData: {
-                balance: updatedBalance.balance,
-                expirationDate: updatedExpiration.expirationDate,
-                name: updatedUser ? updatedUser.name : null
-            }
-        });
+        const updateData = { name };
+        if (expirationDate) updateData.expirationDate = new Date(expirationDate);
+        const result = await registeredUsers.updateOne({ userId: req.params.id }, { $set: updateData });
+        if (result.matchedCount === 0) return res.status(404).json({ error: 'Usuário não encontrado' });
+        const updatedUser = await registeredUsers.findOne({ userId: req.params.id });
+        res.json({ ...updatedUser, balance: 0 }); // Força saldo zerado
     } catch (err) {
-        console.error('Erro na rota PUT /user/:userId:', err.message, err.stack);
-        res.status(500).json({ error: 'Erro ao atualizar dados', details: err.message });
+        console.error('Erro ao atualizar usuário:', err);
+        res.status(500).json({ error: 'Erro ao atualizar usuário' });
     }
 });
 
-// Rota para deletar/cancelar assinatura de um usuário (sem autenticação)
-app.delete('/user/:userId', async (req, res) => {
+app.post('/user/:id/pay', async (req, res) => {
     try {
-        console.log(`Rota DELETE /user/${req.params.userId} acessada`);
-        db = await ensureDBConnection();
-        const userId = req.params.userId.toString().trim();
-
-        if (!userId) {
-            console.error('Erro: userId inválido ou vazio');
-            return res.status(400).json({ error: 'ID do usuário inválido ou vazio' });
+        const { amount } = req.body;
+        const userId = req.params.id;
+        if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+            return res.status(400).json({ error: 'Valor de pagamento inválido' });
         }
 
-        console.log(`Cancelando assinatura do usuário ${userId}`);
+        const payment = {
+            amount: parseFloat(amount),
+            timestamp: new Date(),
+            status: 'completed'
+        };
 
-        // Listar todos os documentos na coleção expirationDates para depuração
-        const allExpirationDocs = await db.collection('expirationDates').find().toArray();
-        console.log('Todos os documentos na coleção expirationDates:', allExpirationDocs);
+        const result = await registeredUsers.updateOne(
+            { userId },
+            { $push: { paymentHistory: payment }, $set: { balance: 0 } } // Mantém balance zerado
+        );
 
-        // Tentar encontrar o documento como string
-        let existingDoc = await db.collection('expirationDates').findOne({ userId: userId });
-        console.log('Documento encontrado como string:', existingDoc);
-
-        // Se não encontrado, tentar como número
-        if (!existingDoc) {
-            const userIdAsNumber = parseInt(userId);
-            if (!isNaN(userIdAsNumber)) {
-                existingDoc = await db.collection('expirationDates').findOne({ userId: userIdAsNumber });
-                console.log('Documento encontrado como número:', existingDoc);
-            }
-        }
-
-        // Se não encontrado, tentar com ObjectId (pouco provável, mas para cobrir todos os casos)
-        if (!existingDoc) {
-            try {
-                existingDoc = await db.collection('expirationDates').findOne({ userId: new ObjectId(userId) });
-                console.log('Documento encontrado como ObjectId:', existingDoc);
-            } catch (err) {
-                console.log('Não é um ObjectId válido:', err.message);
-            }
-        }
-
-        if (!existingDoc) {
-            console.warn(`Nenhum documento encontrado para userId ${userId} na coleção expirationDates`);
-            return res.status(404).json({ message: 'Nenhuma assinatura encontrada para cancelar' });
-        }
-
-        // Determinar o tipo do userId no documento encontrado
-        const userIdInDoc = existingDoc.userId;
-        let deleteQuery;
-        if (typeof userIdInDoc === 'string') {
-            deleteQuery = { userId: userId };
-        } else if (typeof userIdInDoc === 'number') {
-            deleteQuery = { userId: parseInt(userId) };
-        } else if (userIdInDoc instanceof ObjectId) {
-            deleteQuery = { userId: new ObjectId(userId) };
-        } else {
-            console.error('Tipo de userId desconhecido no documento:', typeof userIdInDoc);
-            return res.status(500).json({ error: 'Erro interno: Tipo de userId desconhecido' });
-        }
-
-        const result = await db.collection('expirationDates').deleteOne(deleteQuery);
-        console.log('Resultado da exclusão de data de expiração:', { deletedCount: result.deletedCount });
-
-        if (result.deletedCount === 0) {
-            console.warn(`Falha ao excluir documento para userId ${userId} na coleção expirationDates`);
-            return res.status(500).json({ message: 'Falha ao cancelar a assinatura' });
-        }
-
-        res.setHeader('Content-Type', 'application/json');
-        res.json({ message: 'Assinatura cancelada com sucesso', deletedCount: result.deletedCount });
+        if (result.matchedCount === 0) return res.status(404).json({ error: 'Usuário não encontrado' });
+        const updatedUser = await registeredUsers.findOne({ userId });
+        res.json({ ...updatedUser, balance: 0 }); // Força saldo zerado
     } catch (err) {
-        console.error('Erro na rota DELETE /user/:userId:', err.message);
-        res.status(500).json({ error: 'Erro ao cancelar assinatura', details: err.message });
+        console.error('Erro ao processar pagamento:', err);
+        res.status(500).json({ error: 'Erro ao processar pagamento' });
     }
 });
 
-// Rota para deletar todos os dados de um usuário (sem autenticação)
-app.delete('/user/:userId/all', async (req, res) => {
+app.delete('/user/:id', async (req, res) => {
     try {
-        console.log(`Rota DELETE /user/${req.params.userId}/all acessada`);
-        db = await ensureDBConnection();
-        const userId = req.params.userId.toString().trim();
-
-        if (!userId) {
-            console.error('Erro: userId inválido ou vazio');
-            return res.status(400).json({ error: 'ID do usuário inválido ou vazio' });
-        }
-
-        console.log(`Excluindo todos os dados do usuário ${userId}`);
-
-        // Listar documentos em todas as coleções para depuração
-        const allExpirationDocs = await db.collection('expirationDates').find().toArray();
-        const allRegisteredDocs = await db.collection('registeredUsers').find().toArray();
-        const allBalanceDocs = await db.collection('userBalances').find().toArray();
-        console.log('Documentos na coleção expirationDates:', allExpirationDocs);
-        console.log('Documentos na coleção registeredUsers:', allRegisteredDocs);
-        console.log('Documentos na coleção userBalances:', allBalanceDocs);
-
-        // Tentar encontrar o documento principal (registeredUsers) para determinar o tipo de userId
-        let userDoc = await db.collection('registeredUsers').findOne({ userId: userId });
-        if (!userDoc) {
-            const userIdAsNumber = parseInt(userId);
-            if (!isNaN(userIdAsNumber)) {
-                userDoc = await db.collection('registeredUsers').findOne({ userId: userIdAsNumber });
-            }
-        }
-        if (!userDoc) {
-            try {
-                userDoc = await db.collection('registeredUsers').findOne({ userId: new ObjectId(userId) });
-            } catch (err) {
-                console.log('Não é um ObjectId válido:', err.message);
-            }
-        }
-
-        if (!userDoc) {
-            console.warn(`Nenhum usuário encontrado para userId ${userId} na coleção registeredUsers`);
-            return res.status(404).json({ message: 'Usuário não encontrado' });
-        }
-
-        const userIdInDoc = userDoc.userId;
-        let deleteQuery;
-        if (typeof userIdInDoc === 'string') {
-            deleteQuery = { userId: userId };
-        } else if (typeof userIdInDoc === 'number') {
-            deleteQuery = { userId: parseInt(userId) };
-        } else if (userIdInDoc instanceof ObjectId) {
-            deleteQuery = { userId: new ObjectId(userId) };
-        } else {
-            console.error('Tipo de userId desconhecido no documento:', typeof userIdInDoc);
-            return res.status(500).json({ error: 'Erro interno: Tipo de userId desconhecido' });
-        }
-
-        // Excluir de todas as coleções
-        const expirationResult = await db.collection('expirationDates').deleteOne(deleteQuery);
-        const balanceResult = await db.collection('userBalances').deleteOne(deleteQuery);
-        const registeredResult = await db.collection('registeredUsers').deleteOne(deleteQuery);
-
-        console.log('Resultado da exclusão de expirationDates:', { deletedCount: expirationResult.deletedCount });
-        console.log('Resultado da exclusão de userBalances:', { deletedCount: balanceResult.deletedCount });
-        console.log('Resultado da exclusão de registeredUsers:', { deletedCount: registeredResult.deletedCount });
-
-        const totalDeleted = expirationResult.deletedCount + balanceResult.deletedCount + registeredResult.deletedCount;
-
-        if (totalDeleted === 0) {
-            console.warn(`Nenhum dado excluído para userId ${userId}`);
-            return res.status(404).json({ message: 'Nenhum dado encontrado para excluir' });
-        }
-
-        res.setHeader('Content-Type', 'application/json');
-        res.json({ message: 'Todos os dados do usuário foram excluídos com sucesso', totalDeleted });
+        const result = await registeredUsers.updateOne(
+            { userId: req.params.id },
+            { $set: { expirationDate: null, balance: 0 } } // Cancela assinatura, mantém balance zerado
+        );
+        if (result.matchedCount === 0) return res.status(404).json({ error: 'Usuário não encontrado' });
+        res.json({ message: 'Assinatura cancelada com sucesso' });
     } catch (err) {
-        console.error('Erro na rota DELETE /user/:userId/all:', err.message);
-        res.status(500).json({ error: 'Erro ao excluir todos os dados', details: err.message });
+        console.error('Erro ao cancelar assinatura:', err);
+        res.status(500).json({ error: 'Erro ao cancelar assinatura' });
+    }
+});
+
+app.delete('/user/:id/all', async (req, res) => {
+    try {
+        const result = await registeredUsers.deleteOne({ userId: req.params.id });
+        if (result.deletedCount === 0) return res.status(404).json({ error: 'Usuário não encontrado' });
+        res.json({ message: 'Usuário e todos os dados excluídos com sucesso' });
+    } catch (err) {
+        console.error('Erro ao excluir usuário:', err);
+        res.status(500).json({ error: 'Erro ao excluir usuário' });
     }
 });
 
 app.listen(port, () => {
-    console.log(`Servidor rodando na porta ${port}`);
+    console.log(`Servidor rodando em http://localhost:${port}`);
+});
+
+process.on('SIGTERM', async () => {
+    await client.close();
+    console.log('Conexão com MongoDB encerrada');
+    process.exit(0);
 });

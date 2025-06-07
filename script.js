@@ -473,12 +473,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalUsers = users.length;
         let totalBalance = 0;
         users.forEach(user => {
-            const balance = parseFloat(user.balance);
-            if (isNaN(balance)) {
-                console.warn(`Saldo inválido para usuário ${user.userId || 'sem ID'}:`, user.balance);
-            } else {
-                totalBalance += balance;
-            }
+            const paymentHistory = user.paymentHistory || [];
+            totalBalance += paymentHistory.reduce((total, payment) => total + (parseFloat(payment.amount) || 0), 0);
         });
         const currentDate = new Date();
         const activeSubscriptions = users.filter(user => {
@@ -587,7 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const requestBody = { name, balance, expirationDate };
+            const requestBody = { name, balance: 0, expirationDate }; // Força balance zerado
             console.log('Enviando atualização para o servidor:', { userId: currentUserId, requestBody });
             fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
                 method: 'PUT',
