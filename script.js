@@ -233,6 +233,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadUsers();
             } else if (action === 'Usuários Registrados') {
                 loadRegisteredUsers();
+            } else if (action === 'Usuários Ativos') {
+                loadActiveUsers();
             } else if (link.id === 'logout') {
                 handleLogout();
             }
@@ -401,6 +403,68 @@ document.addEventListener('DOMContentLoaded', () => {
             updateDashboardStats([]);
             showError(`Erro ao carregar usuários registrados: ${error.message}`);
             alert(`Erro ao carregar usuários registrados: ${error.message}`);
+        });
+    }
+
+    // Função para carregar Usuários Ativos (somente usuários que pagaram)
+    function loadActiveUsers() {
+        console.log('Carregando Usuários Ativos...');
+        showLoading();
+        searchContainer.style.display = 'block';
+        usersTable.style.display = 'table';
+        fetch('https://site-moneybet.onrender.com/users', {
+            credentials: 'include',
+            mode: 'cors'
+        })
+        .then(response => {
+            console.log('Resposta do servidor para Usuários Ativos:', {
+                status: response.status,
+                statusText: response.statusText,
+                headers: Object.fromEntries(response.headers.entries())
+            });
+            if (!response.ok) {
+                throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
+            }
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error(`Resposta não é JSON: ${text.substring(0, 50)}...`);
+                });
+            }
+            return response.json();
+        })
+        .then(users => {
+            console.log('Dados brutos recebidos:', users);
+            hideLoading();
+            if (!users || !Array.isArray(users)) {
+                console.warn('Nenhum usuário encontrado ou dados inválidos:', users);
+                tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário ativo encontrado.</td></tr>';
+                updateDashboardStats([]);
+                return;
+            }
+            allUsers = users;
+            // Filtrar usuários que pagaram (com paymentHistory ou saldo > 0 e expirationDate)
+            const activeUsers = users.filter(user => {
+                const hasPaymentHistory = user.paymentHistory && user.paymentHistory.length > 0;
+                const hasBalance = user.balance && parseFloat(user.balance) > 0;
+                const hasExpiration = user.expirationDate;
+                return (hasPaymentHistory || hasBalance) && hasExpiration;
+            });
+            if (activeUsers.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário ativo encontrado.</td></tr>';
+            } else {
+                populateUserTable(activeUsers);
+            }
+            updateDashboardStats(activeUsers); // Atualiza stats apenas com os filtrados
+            console.log('Usuários ativos carregados:', activeUsers);
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Erro ao carregar Usuários Ativos:', error);
+            tableBody.innerHTML = `<tr><td colspan="9">Erro: ${error.message}</td></tr>`;
+            updateDashboardStats([]);
+            showError(`Erro ao carregar usuários ativos: ${error.message}`);
+            alert(`Erro ao carregar usuários ativos: ${error.message}`);
         });
     }
 
