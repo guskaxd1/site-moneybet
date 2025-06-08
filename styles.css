@@ -202,6 +202,7 @@ header h1 {
 .table-container {
     position: relative;
     overflow-x: auto; /* Rolagem horizontal em telas menores */
+    width: 100%; /* Garante que ocupe toda a largura disponível */
     margin-bottom: 20px;
 }
 
@@ -213,15 +214,18 @@ header h1 {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     overflow: hidden;
+    table-layout: fixed; /* Garante layout fixo para melhor controle */
 }
 
-th, td {
-    padding: 15px;
+#usersTable th,
+#usersTable td {
+    padding: 12px;
     text-align: center;
     border-bottom: 1px solid #ddd;
+    word-wrap: break-word; /* Quebra palavras longas */
 }
 
-th {
+#usersTable th {
     background-color: #34495e;
     color: #ecf0f1;
     font-weight: normal;
@@ -230,22 +234,22 @@ th {
     z-index: 10;
 }
 
-tr:hover {
+#usersTable tr:hover {
     background-color: #f9f9f9;
 }
 
 /* Botões de ação */
 .action-btn {
-    padding: 8px 12px;
+    padding: 6px 10px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     transition: transform 0.2s ease, background-color 0.3s ease, box-shadow 0.2s ease;
-    margin-right: 4px; /* Reduz espaçamento em telas menores */
+    margin-right: 2px;
 }
 
 .edit-btn {
@@ -390,14 +394,13 @@ tr:hover {
 
     #usersTable th,
     #usersTable td {
-        padding: 12px;
-        font-size: 14px;
+        padding: 10px;
+        font-size: 12px;
     }
 
     .action-btn {
-        padding: 6px 10px;
-        font-size: 12px;
-        margin-right: 2px;
+        padding: 5px 8px;
+        font-size: 11px;
     }
 }
 
@@ -419,22 +422,22 @@ tr:hover {
     }
 
     #usersTable {
-        min-width: 600px; /* Reduz mínimo para telas menores */
+        min-width: 600px;
     }
 
     #usersTable th,
     #usersTable td {
         padding: 8px;
-        font-size: 12px;
+        font-size: 11px;
     }
 
     #usersTable th:nth-child(5), /* Histórico de Pagamento */
     #usersTable td:nth-child(5) {
-        display: none; /* Esconde em telas pequenas */
+        display: none;
     }
 
     .action-btn {
-        padding: 4px 8px;
+        padding: 4px 6px;
         font-size: 10px;
     }
 }
@@ -465,7 +468,7 @@ tr:hover {
     }
 
     .panel-card p {
-        font-size: 20px;
+        font-size: 18px;
     }
 
     .table-container {
@@ -474,7 +477,7 @@ tr:hover {
     }
 
     #usersTable {
-        min-width: 400px; /* Mínimo ainda mais reduzido */
+        min-width: 400px;
     }
 
     #usersTable th,
@@ -489,13 +492,20 @@ tr:hover {
     #usersTable td:nth-child(5),
     #usersTable th:nth-child(6), /* Saldo */
     #usersTable td:nth-child(6) {
-        display: none; /* Esconde mais colunas */
+        display: none;
     }
 
     .action-btn {
-        padding: 3px 6px;
-        font-size: 8px;
+        padding: 3px 5px;
+        font-size: 9px;
         margin-right: 1px;
+        display: block; /* Empilha botões verticalmente */
+        margin-bottom: 2px;
+    }
+
+    .edit-btn,
+    .delete-btn {
+        width: 100%; /* Garante que ocupem toda a largura do contêiner */
     }
 }
 
