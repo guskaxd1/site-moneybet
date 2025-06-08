@@ -6,7 +6,7 @@ let editNameInput = null;
 let editBalanceInput = null;
 let editExpirationInput = null;
 let editDaysRemainingInput = null;
-let editIndicationInput = null; // Novo campo para Indicação
+let editIndicationInput = null; // Campo para Indicação
 let cancelNameDisplay = null;
 let currentUserId = null;
 
@@ -43,8 +43,8 @@ function openEditModal(userId, name, balance, expirationDate) {
         editDaysRemainingInput.value = '0 dias';
     }
 
-    // Configurar o campo Indicação com "Soneca" como única opção
-    editIndicationInput.value = 'Soneca'; // Definir como "Soneca" por padrão
+    // Configurar o campo Indicação com "Soneca" como padrão
+    editIndicationInput.value = 'Soneca'; // Definir "Soneca" como selecionado
 
     $('#editModal').modal('show');
     console.log('Modal de edição exibido');
@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
     editBalanceInput = document.getElementById('edit-balance');
     editExpirationInput = document.getElementById('edit-expiration');
     editDaysRemainingInput = document.getElementById('edit-days-remaining');
-    editIndicationInput = document.getElementById('edit-indication'); // Novo elemento DOM
+    editIndicationInput = document.getElementById('edit-indication'); // Campo para Indicação
     cancelNameDisplay = document.getElementById('cancel-name');
     const loadingDiv = document.getElementById('loading');
     const errorDiv = document.getElementById('error');
@@ -507,6 +507,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Decodificar userId e name para corrigir caracteres codificados
             const decodedUserId = decodeURIComponent(user.userId || '-');
             const decodedName = decodeURIComponent(user.name || '-');
+            // Adicionar classe 'indicated-user' se o usuário tiver indicação
+            const isIndicated = user.indication === 'Soneca';
             row.innerHTML = `
                 <td>${decodedUserId}</td>
                 <td>${decodedName}</td>
@@ -521,6 +523,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="action-btn delete-btn" onclick="openCancelModal('${user.userId || ''}', '${(user.name || '').replace(/'/g, "\\'")}')"><i class="fas fa-trash-alt"></i> Excluir</button>
                 </td>
             `;
+            if (isIndicated) {
+                row.classList.add('indicated-user');
+            }
             tableBody.appendChild(row);
         });
         console.log('Tabela de usuários populada com', users.length, 'entradas');
@@ -606,7 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.error) throw new Error(data.error);
                 alert('Sucesso: Dados atualizados!');
                 $('#editModal').modal('hide');
-                loadUsers();
+                loadUsers(); // Recarrega a tabela para aplicar a nova classe
             })
             .catch(error => {
                 console.error('Erro ao salvar:', error);
