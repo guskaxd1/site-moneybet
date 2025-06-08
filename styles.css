@@ -202,13 +202,15 @@ header h1 {
 .table-container {
     position: relative;
     overflow-x: auto; /* Rolagem horizontal em telas menores */
+    overflow-y: auto; /* Rolagem vertical se necessário */
     width: 100%; /* Garante que ocupe toda a largura disponível */
+    max-height: 70vh; /* Limita a altura máxima da tabela */
     margin-bottom: 20px;
 }
 
 #usersTable {
     width: 100%;
-    min-width: 600px; /* Reduzido para melhor adaptação */
+    min-width: 300px; /* Reduzido para melhor adaptação */
     border-collapse: collapse;
     background: #fff;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -224,6 +226,7 @@ header h1 {
     word-break: break-all; /* Quebra em qualquer caractere */
     max-width: 150px; /* Limita a largura máxima */
     white-space: normal; /* Permite quebras de linha */
+    vertical-align: middle; /* Centraliza verticalmente o conteúdo */
 }
 
 #usersTable th {
@@ -424,7 +427,7 @@ header h1 {
     }
 
     #usersTable {
-        min-width: 500px;
+        min-width: 300px;
     }
 
     #usersTable th,
@@ -477,6 +480,7 @@ header h1 {
     .table-container {
         overflow-x: auto;
         width: 100%;
+        max-height: 50vh; /* Ajuste para telas menores */
     }
 
     #usersTable {
