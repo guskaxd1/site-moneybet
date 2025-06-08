@@ -43,8 +43,8 @@ function openEditModal(userId, name, balance, expirationDate) {
         editDaysRemainingInput.value = '0 dias';
     }
 
-    // Configurar o campo Indicação com "Soneca" como padrão
-    editIndicationInput.value = 'Soneca'; // Definir "Soneca" como selecionado
+    // Configurar o campo Indicação como vazio por padrão
+    editIndicationInput.value = ''; // Define como vazio inicialmente
 
     $('#editModal').modal('show');
     console.log('Modal de edição exibido');
@@ -507,8 +507,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Decodificar userId e name para corrigir caracteres codificados
             const decodedUserId = decodeURIComponent(user.userId || '-');
             const decodedName = decodeURIComponent(user.name || '-');
-            // Adicionar classe 'indicated-user' se o usuário tiver indicação
-            const isIndicated = user.indication === 'Soneca';
+            // Adicionar classe 'indicated-user' se o usuário tiver indicação "Soneca"
+            const isIndicated = user.indication === 'Soneca'; // Verifica se a indicação é "Soneca"
             row.innerHTML = `
                 <td>${decodedUserId}</td>
                 <td>${decodedName}</td>
@@ -525,6 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             if (isIndicated) {
                 row.classList.add('indicated-user');
+                console.log(`Usuário ${decodedUserId} marcado como indicado com classe 'indicated-user'`);
             }
             tableBody.appendChild(row);
         });

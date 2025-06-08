@@ -242,9 +242,8 @@ header h1 {
     background-color: #f9f9f9;
 }
 
-/* Nova classe para usuários com indicação */
 #usersTable tr.indicated-user {
-    background-color: #e0e0e0; /* Cinza claro para diferenciar */
+    background-color: #e0e0e0; /* Cinza claro para usuários indicados */
 }
 
 #usersTable tr.indicated-user:hover {
