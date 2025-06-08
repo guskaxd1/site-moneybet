@@ -489,9 +489,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const expirationDate = user.expirationDate ? new Date(user.expirationDate) : null;
             const expirationValue = expirationDate ? expirationDate.toLocaleDateString('pt-BR') : '-';
             const daysRemaining = calculateDaysRemaining(user.expirationDate);
+            // Decodificar userId e name para corrigir caracteres codificados
+            const decodedUserId = decodeURIComponent(user.userId || '-');
+            const decodedName = decodeURIComponent(user.name || '-');
             row.innerHTML = `
-                <td>${user.userId || '-'}</td>
-                <td>${user.name || '-'}</td>
+                <td>${decodedUserId}</td>
+                <td>${decodedName}</td>
                 <td>${user.whatsapp || '-'}</td>
                 <td>${user.registeredAt ? new Date(user.registeredAt).toLocaleDateString('pt-BR') : '-'}</td>
                 <td>${Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0 ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${new Date(p.timestamp).toLocaleDateString('pt-BR')})`).join('<br>') : '-'}</td>
