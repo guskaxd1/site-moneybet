@@ -208,21 +208,21 @@ header h1 {
 
 #usersTable {
     width: 100%;
-    min-width: 800px; /* Largura mínima para garantir legibilidade */
+    min-width: 600px; /* Reduzido para melhor adaptação */
     border-collapse: collapse;
     background: #fff;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     overflow: hidden;
-    table-layout: fixed; /* Garante layout fixo para melhor controle */
 }
 
 #usersTable th,
 #usersTable td {
-    padding: 12px;
+    padding: 6px; /* Reduzido para evitar sobreposição */
     text-align: center;
     border-bottom: 1px solid #ddd;
-    word-wrap: break-word; /* Quebra palavras longas */
+    word-break: break-all; /* Quebra em qualquer caractere */
+    max-width: 150px; /* Limita a largura máxima */
 }
 
 #usersTable th {
@@ -240,14 +240,14 @@ header h1 {
 
 /* Botões de ação */
 .action-btn {
-    padding: 6px 10px;
+    padding: 4px 6px;
     border: none;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 10px;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
     transition: transform 0.2s ease, background-color 0.3s ease, box-shadow 0.2s ease;
     margin-right: 2px;
 }
@@ -264,7 +264,7 @@ header h1 {
 .edit-btn:hover {
     background-color: #2980b9;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
 }
 
 .delete-btn {
@@ -279,7 +279,7 @@ header h1 {
 .delete-btn:hover {
     background-color: #c0392b;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+    box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
 }
 
 /* Modal */
@@ -394,8 +394,9 @@ header h1 {
 
     #usersTable th,
     #usersTable td {
-        padding: 10px;
+        padding: 8px;
         font-size: 12px;
+        max-width: 120px;
     }
 
     .action-btn {
@@ -422,13 +423,14 @@ header h1 {
     }
 
     #usersTable {
-        min-width: 600px;
+        min-width: 500px;
     }
 
     #usersTable th,
     #usersTable td {
-        padding: 8px;
+        padding: 6px;
         font-size: 11px;
+        max-width: 100px;
     }
 
     #usersTable th:nth-child(5), /* Histórico de Pagamento */
@@ -477,13 +479,14 @@ header h1 {
     }
 
     #usersTable {
-        min-width: 400px;
+        min-width: 300px;
     }
 
     #usersTable th,
     #usersTable td {
-        padding: 6px;
-        font-size: 10px;
+        padding: 4px;
+        font-size: 9px;
+        max-width: 80px;
     }
 
     #usersTable th:nth-child(3), /* WhatsApp */
@@ -497,15 +500,14 @@ header h1 {
 
     .action-btn {
         padding: 3px 5px;
-        font-size: 9px;
+        font-size: 8px;
         margin-right: 1px;
-        display: block; /* Empilha botões verticalmente */
-        margin-bottom: 2px;
+        display: block;
     }
 
     .edit-btn,
     .delete-btn {
-        width: 100%; /* Garante que ocupem toda a largura do contêiner */
+        width: 100%;
     }
 }
 
