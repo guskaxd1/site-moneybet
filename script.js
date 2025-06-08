@@ -9,6 +9,7 @@ let editDaysRemainingInput = null;
 let editIndicationInput = null; // Campo para Indicação
 let cancelNameDisplay = null;
 let currentUserId = null;
+let isAuthenticated = false; // Flag para indicar se o usuário está logado
 
 // Funções globais para os botões de ação
 function openEditModal(userId, name, balance, expirationDate) {
@@ -213,6 +214,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         return;
     }
+
+    // Função para verificar autenticação e redirecionar
+    function checkAuthentication() {
+        fetch('https://site-moneybet.onrender.com/check-auth', {
+            method: 'GET',
+            credentials: 'include',
+            mode: 'cors'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erro ao verificar autenticação');
+            }
+            return response.json();
+        })
+        .then(data => {
+            isAuthenticated = data.isAuthenticated;
+            console.log('Status de autenticação:', isAuthenticated);
+            if (!isAuthenticated) {
+                // Inicia o timer de 5 segundos para redirecionar
+                setTimeout(() => {
+                    if (!isAuthenticated) {
+                        console.log('Usuário não autenticado, redirecionando para login...');
+                        window.location.href = '/login'; // Ajuste para a URL de login real
+                    }
+                }, 5000); // 5 segundos
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao verificar autenticação:', error);
+            isAuthenticated = false;
+            setTimeout(() => {
+                if (!isAuthenticated) {
+                    console.log('Erro na autenticação, redirecionando para login...');
+                    window.location.href = '/login'; // Ajuste para a URL de login real
+                }
+            }, 5000); // 5 segundos
+        });
+    }
+
+    // Chama a verificação de autenticação ao carregar a página
+    checkAuthentication();
 
     menuToggle.addEventListener('click', () => {
         sidebar.classList.toggle('active');
@@ -539,7 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const query = searchInput.value.toLowerCase();
         const filteredUsers = allUsers.filter(user => 
             (user.userId && user.userId.toLowerCase().includes(query)) ||
-            (user.name && name.toLowerCase().includes(query))
+            (user.name && user.name.toLowerCase().includes(query))
         );
         populateUserTable(filteredUsers);
         console.log('Usuários filtrados:', filteredUsers.length);

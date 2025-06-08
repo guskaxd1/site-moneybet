@@ -3,6 +3,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 const path = require('path');
 require('dotenv').config();
 const cors = require('cors');
+const cookieParser = require('cookie-parser'); // Adicionado para gerenciar cookies
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -47,10 +48,20 @@ app.use(cors({
 }));
 app.use(express.static(path.join(__dirname, '.')));
 app.use(express.json());
+app.use(cookieParser()); // Adicionado para gerenciar cookies
 
-// Rota para a raiz (/) que serve o index.html (sem autenticação)
+// Rota para a raiz (/) que serve o login.html como página inicial
 app.get('/', (req, res) => {
     console.log('Rota / acessada');
+    res.sendFile(path.join(__dirname, 'login.html')); // Redireciona para login.html por padrão
+});
+
+// Rota para servir index.html apenas para usuários autenticados (futuro)
+app.get('/index.html', (req, res, next) => {
+    if (!req.cookies.auth || req.cookies.auth !== 'true') {
+        console.log('Usuário não autenticado, redirecionando para login');
+        return res.redirect('/');
+    }
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
@@ -355,6 +366,29 @@ app.delete('/user/:userId/all', async (req, res) => {
         console.error('Erro na rota DELETE /user/:userId/all:', err.message);
         res.status(500).json({ error: 'Erro ao excluir todos os dados', details: err.message });
     }
+});
+
+// Rota para login
+app.post('/login', (req, res) => {
+    console.log('Rota /login acessada');
+    const { username, password } = req.body;
+
+    // Simulação de validação de usuário (substitua por lógica real com MongoDB)
+    if (username === 'adm1' && password === 'Bueno00') {
+        res.cookie('auth', 'true', { maxAge: 3600000, httpOnly: true }); // Cookie válido por 1 hora
+        console.log('Login bem-sucedido, cookie definido');
+        res.json({ success: true, message: 'Login bem-sucedido' });
+    } else {
+        console.log('Credenciais inválidas');
+        res.status(401).json({ success: false, message: 'Credenciais inválidas' });
+    }
+});
+
+// Rota para verificar autenticação
+app.get('/check-auth', (req, res) => {
+    console.log('Rota /check-auth acessada');
+    const isAuthenticated = req.cookies.auth === 'true'; // Verifica o cookie
+    res.json({ isAuthenticated });
 });
 
 app.listen(port, () => {
