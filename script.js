@@ -6,10 +6,10 @@ let editNameInput = null;
 let editBalanceInput = null;
 let editExpirationInput = null;
 let editDaysRemainingInput = null;
-let editIndicationInput = null; // Campo para Indicação
+let editIndicationInput = null;
 let cancelNameDisplay = null;
 let currentUserId = null;
-let isAuthenticated = false; // Flag para indicar se o usuário está logado
+let isAuthenticated = false;
 
 // Funções globais para os botões de ação
 function openEditModal(userId, name, balance, expirationDate) {
@@ -21,8 +21,8 @@ function openEditModal(userId, name, balance, expirationDate) {
     currentUserId = userId;
     editIdInput.value = userId || '-';
     editNameInput.value = name || '-';
-    editBalanceInput.value = (0).toFixed(2); // Sempre zerado
-    
+    editBalanceInput.value = (0).toFixed(2);
+
     if (expirationDate) {
         try {
             const expDate = new Date(expirationDate);
@@ -44,8 +44,7 @@ function openEditModal(userId, name, balance, expirationDate) {
         editDaysRemainingInput.value = '0 dias';
     }
 
-    // Configurar o campo Indicação como vazio por padrão
-    editIndicationInput.value = ''; // Define como vazio inicialmente
+    editIndicationInput.value = '';
     console.log('Valor inicial de Indicação:', editIndicationInput.value);
 
     $('#editModal').modal('show');
@@ -64,7 +63,6 @@ function updateDaysRemaining(expirationDate) {
     console.log('Dias restantes calculados:', editDaysRemainingInput.value);
 }
 
-// Função para calcular dias restantes para a tabela
 function calculateDaysRemaining(expirationDate) {
     if (!expirationDate) return '0 dias';
     try {
@@ -202,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
     editBalanceInput = document.getElementById('edit-balance');
     editExpirationInput = document.getElementById('edit-expiration');
     editDaysRemainingInput = document.getElementById('edit-days-remaining');
-    editIndicationInput = document.getElementById('edit-indication'); // Campo para Indicação
+    editIndicationInput = document.getElementById('edit-indication');
     cancelNameDisplay = document.getElementById('cancel-name');
     const loadingDiv = document.getElementById('loading');
     const errorDiv = document.getElementById('error');
@@ -215,7 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Função para verificar autenticação e redirecionar
     function checkAuthentication() {
         fetch('https://site-moneybet.onrender.com/check-auth', {
             method: 'GET',
@@ -232,13 +229,12 @@ document.addEventListener('DOMContentLoaded', () => {
             isAuthenticated = data.isAuthenticated;
             console.log('Status de autenticação:', isAuthenticated);
             if (!isAuthenticated) {
-                // Inicia o timer de 5 segundos para redirecionar
                 setTimeout(() => {
                     if (!isAuthenticated) {
                         console.log('Usuário não autenticado, redirecionando para login...');
-                        window.location.href = '/login'; // Ajuste para a URL de login real
+                        window.location.href = '/';
                     }
-                }, 5000); // 5 segundos
+                }, 5000);
             }
         })
         .catch(error => {
@@ -247,14 +243,34 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 if (!isAuthenticated) {
                     console.log('Erro na autenticação, redirecionando para login...');
-                    window.location.href = '/login'; // Ajuste para a URL de login real
+                    window.location.href = '/';
                 }
-            }, 5000); // 5 segundos
+            }, 5000);
         });
     }
 
-    // Chama a verificação de autenticação ao carregar a página
-    checkAuthentication();
+    function handleLogout() {
+        console.log('Logout solicitado');
+        fetch('https://site-moneybet.onrender.com/logout', {
+            method: 'POST',
+            credentials: 'include',
+            mode: 'cors'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erro ao fazer logout');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Logout bem-sucedido:', data.message);
+            window.location.href = '/';
+        })
+        .catch(error => {
+            console.error('Erro ao fazer logout:', error.message);
+            alert('Erro ao fazer logout: ' + error.message);
+        });
+    }
 
     menuToggle.addEventListener('click', () => {
         sidebar.classList.toggle('active');
@@ -361,7 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
         })
         .then(data => {
-            console.log('Dados brutos recebidos:', JSON.stringify(data, null, 2)); // Log detalhado
+            console.log('Dados brutos recebidos:', JSON.stringify(data, null, 2));
             hideLoading();
             if (!data || !data.users || data.users.length === 0) {
                 console.warn('Nenhum usuário encontrado ou dados inválidos:', data);
@@ -533,10 +549,9 @@ document.addEventListener('DOMContentLoaded', () => {
         tableBody.innerHTML = '';
         users.forEach(user => {
             const row = document.createElement('tr');
-            const balanceValue = 0; // Sempre zerado
+            const balanceValue = 0;
             const registeredAt = user.registeredAt ? new Date(user.registeredAt) : null;
             const expirationDate = user.expirationDate ? new Date(user.expirationDate) : null;
-            // Formatar data com os dois últimos dígitos do ano
             const formatDate = (date) => {
                 if (!date || isNaN(date.getTime())) return '-';
                 const day = String(date.getDate()).padStart(2, '0');
@@ -547,11 +562,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const registeredValue = registeredAt ? formatDate(registeredAt) : '-';
             const expirationValue = expirationDate ? formatDate(expirationDate) : '-';
             const daysRemaining = calculateDaysRemaining(user.expirationDate);
-            // Decodificar userId e name para corrigir caracteres codificados
             const decodedUserId = decodeURIComponent(user.userId || '-');
             const decodedName = decodeURIComponent(user.name || '-');
-            // Adicionar classe 'indicated-user' se o usuário tiver indicação "Soneca"
-            const isIndicated = user.indication === 'Soneca'; // Verifica se a indicação é "Soneca"
+            const isIndicated = user.indication === 'Soneca';
             row.innerHTML = `
                 <td>${decodedUserId}</td>
                 <td>${decodedName}</td>
@@ -604,9 +617,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (saveBtn) {
         saveBtn.addEventListener('click', () => {
             const name = editNameInput.value.trim();
-            const balance = 0; // Sempre zerado
+            const balance = 0;
             let expirationDate = null;
-            const indication = editIndicationInput.value; // Valor do campo Indicação
+            const indication = editIndicationInput.value;
 
             if (editExpirationInput.value) {
                 try {
@@ -630,7 +643,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const requestBody = { name, balance: 0, expirationDate, indication }; // Inclui o campo Indicação
+            const requestBody = { name, balance: 0, expirationDate, indication };
             console.log('Enviando atualização para o servidor:', { userId: currentUserId, requestBody });
             fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
                 method: 'PUT',
@@ -657,7 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.error) throw new Error(data.error);
                 alert('Sucesso: Dados atualizados!');
                 $('#editModal').modal('hide');
-                loadUsers(); // Força recarga da tabela
+                loadUsers();
             })
             .catch(error => {
                 console.error('Erro ao salvar:', error);
@@ -690,12 +703,8 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Erro exibido:', message);
     }
 
-    function handleLogout() {
-        console.log('Logout solicitado (desativado temporariamente)');
-        window.location.href = '/';
-    }
-
     logoutBtn.addEventListener('click', handleLogout);
 
+    checkAuthentication();
     loadUsers();
 });
