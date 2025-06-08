@@ -201,11 +201,13 @@ header h1 {
 /* Tabela */
 .table-container {
     position: relative;
-    overflow-x: auto;
+    overflow-x: auto; /* Rolagem horizontal em telas menores */
+    margin-bottom: 20px;
 }
 
-table {
+#usersTable {
     width: 100%;
+    min-width: 800px; /* Largura mínima para garantir legibilidade */
     border-collapse: collapse;
     background: #fff;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -243,7 +245,7 @@ tr:hover {
     align-items: center;
     gap: 6px;
     transition: transform 0.2s ease, background-color 0.3s ease, box-shadow 0.2s ease;
-    margin-right: 8px;
+    margin-right: 4px; /* Reduz espaçamento em telas menores */
 }
 
 .edit-btn {
@@ -386,13 +388,16 @@ tr:hover {
         min-width: 180px;
     }
 
-    table {
+    #usersTable th,
+    #usersTable td {
+        padding: 12px;
         font-size: 14px;
     }
 
-    th,
-    td {
-        padding: 10px;
+    .action-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+        margin-right: 2px;
     }
 }
 
@@ -409,38 +414,28 @@ tr:hover {
         padding: 0;
     }
 
-    table {
-        min-width: 800px;
-        font-size: 12px;
+    .table-container {
+        min-width: 100%;
     }
 
-    th,
-    td {
+    #usersTable {
+        min-width: 600px; /* Reduz mínimo para telas menores */
+    }
+
+    #usersTable th,
+    #usersTable td {
         padding: 8px;
-    }
-
-    header h1 {
-        font-size: 20px;
-    }
-
-    .logout-btn {
-        padding: 8px 16px;
         font-size: 12px;
     }
 
-    .modal-content {
-        max-width: 90%;
+    #usersTable th:nth-child(5), /* Histórico de Pagamento */
+    #usersTable td:nth-child(5) {
+        display: none; /* Esconde em telas pequenas */
     }
 
     .action-btn {
-        padding: 6px 10px;
-        font-size: 12px;
-        margin-right: 2px;
-    }
-
-    .menu-toggle {
-        padding: 8px;
-        font-size: 18px;
+        padding: 4px 8px;
+        font-size: 10px;
     }
 }
 
@@ -471,6 +466,36 @@ tr:hover {
 
     .panel-card p {
         font-size: 20px;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        width: 100%;
+    }
+
+    #usersTable {
+        min-width: 400px; /* Mínimo ainda mais reduzido */
+    }
+
+    #usersTable th,
+    #usersTable td {
+        padding: 6px;
+        font-size: 10px;
+    }
+
+    #usersTable th:nth-child(3), /* WhatsApp */
+    #usersTable td:nth-child(3),
+    #usersTable th:nth-child(5), /* Histórico de Pagamento */
+    #usersTable td:nth-child(5),
+    #usersTable th:nth-child(6), /* Saldo */
+    #usersTable td:nth-child(6) {
+        display: none; /* Esconde mais colunas */
+    }
+
+    .action-btn {
+        padding: 3px 6px;
+        font-size: 8px;
+        margin-right: 1px;
     }
 }
 
