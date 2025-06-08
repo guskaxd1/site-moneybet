@@ -486,20 +486,25 @@ document.addEventListener('DOMContentLoaded', () => {
         users.forEach(user => {
             const row = document.createElement('tr');
             const balanceValue = 0; // Sempre zerado
+            const registeredAt = user.registeredAt ? new Date(user.registeredAt) : null;
             const expirationDate = user.expirationDate ? new Date(user.expirationDate) : null;
+            const registeredValue = registeredAt ? registeredAt.toLocaleDateString('pt-BR') : '-';
             const expirationValue = expirationDate ? expirationDate.toLocaleDateString('pt-BR') : '-';
             const daysRemaining = calculateDaysRemaining(user.expirationDate);
             // Decodificar userId e name para corrigir caracteres codificados
             const decodedUserId = decodeURIComponent(user.userId || '-');
             const decodedName = decodeURIComponent(user.name || '-');
+            // Usar título (tooltip) para exibir data completa e formato curto para a célula
+            const shortRegisteredValue = registeredValue.length > 8 ? registeredValue.replace(/\//g, '/<br>') : registeredValue;
+            const shortExpirationValue = expirationValue.length > 8 ? expirationValue.replace(/\//g, '/<br>') : expirationValue;
             row.innerHTML = `
                 <td>${decodedUserId}</td>
                 <td>${decodedName}</td>
                 <td>${user.whatsapp || '-'}</td>
-                <td>${user.registeredAt ? new Date(user.registeredAt).toLocaleDateString('pt-BR') : '-'}</td>
+                <td title="${registeredValue}">${shortRegisteredValue}</td>
                 <td>${Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0 ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${new Date(p.timestamp).toLocaleDateString('pt-BR')})`).join('<br>') : '-'}</td>
                 <td>${balanceValue.toFixed(2)}</td>
-                <td>${expirationValue}</td>
+                <td title="${expirationValue}">${shortExpirationValue}</td>
                 <td>${daysRemaining}</td>
                 <td>
                     <button class="action-btn edit-btn" onclick="openEditModal('${user.userId || ''}', '${(user.name || '').replace(/'/g, "\\'")}', ${balanceValue}, '${user.expirationDate || ''}')"><i class="fas fa-edit"></i> Editar</button>

@@ -223,6 +223,7 @@ header h1 {
     border-bottom: 1px solid #ddd;
     word-break: break-all; /* Quebra em qualquer caractere */
     max-width: 150px; /* Limita a largura máxima */
+    white-space: normal; /* Permite quebras de linha */
 }
 
 #usersTable th {
