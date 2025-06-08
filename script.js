@@ -488,8 +488,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const balanceValue = 0; // Sempre zerado
             const registeredAt = user.registeredAt ? new Date(user.registeredAt) : null;
             const expirationDate = user.expirationDate ? new Date(user.expirationDate) : null;
-            const registeredValue = registeredAt ? registeredAt.toLocaleDateString('pt-BR') : '-';
-            const expirationValue = expirationDate ? expirationDate.toLocaleDateString('pt-BR') : '-';
+            // Formatar data com os dois últimos dígitos do ano
+            const formatDate = (date) => {
+                if (!date || isNaN(date.getTime())) return '-';
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = String(date.getFullYear()).slice(-2);
+                return `${day}/${month}/${year}`;
+            };
+            const registeredValue = registeredAt ? formatDate(registeredAt) : '-';
+            const expirationValue = expirationDate ? formatDate(expirationDate) : '-';
             const daysRemaining = calculateDaysRemaining(user.expirationDate);
             // Decodificar userId e name para corrigir caracteres codificados
             const decodedUserId = decodeURIComponent(user.userId || '-');
@@ -498,10 +506,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${decodedUserId}</td>
                 <td>${decodedName}</td>
                 <td>${user.whatsapp || '-'}</td>
-                <td title="${registeredValue}">${registeredValue}</td>
-                <td>${Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0 ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${new Date(p.timestamp).toLocaleDateString('pt-BR')})`).join('<br>') : '-'}</td>
+                <td title="${registeredAt ? registeredAt.toLocaleDateString('pt-BR') : '-'}">${registeredValue}</td>
+                <td>${Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0 ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${formatDate(new Date(p.timestamp))})`).join('<br>') : '-'}</td>
                 <td>${balanceValue.toFixed(2)}</td>
-                <td title="${expirationValue}">${expirationValue}</td>
+                <td title="${expirationDate ? expirationDate.toLocaleDateString('pt-BR') : '-'}">${expirationValue}</td>
                 <td>${daysRemaining}</td>
                 <td>
                     <button class="action-btn edit-btn" onclick="openEditModal('${user.userId || ''}', '${(user.name || '').replace(/'/g, "\\'")}', ${balanceValue}, '${user.expirationDate || ''}')"><i class="fas fa-edit"></i> Editar</button>
