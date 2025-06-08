@@ -243,11 +243,11 @@ header h1 {
 }
 
 #usersTable tr.indicated-user {
-    background-color: #e0e0e0; /* Cinza claro para usuários indicados */
+    background-color: #b9b9b9; /* Cinza claro para usuários indicados */
 }
 
 #usersTable tr.indicated-user:hover {
-    background-color: #d0d0d0; /* Cinza mais escuro no hover */
+    background-color: #868686; /* Cinza mais escuro no hover */
 }
 
 /* Botões de ação */

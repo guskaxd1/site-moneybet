@@ -45,6 +45,7 @@ function openEditModal(userId, name, balance, expirationDate) {
 
     // Configurar o campo Indicação como vazio por padrão
     editIndicationInput.value = ''; // Define como vazio inicialmente
+    console.log('Valor inicial de Indicação:', editIndicationInput.value);
 
     $('#editModal').modal('show');
     console.log('Modal de edição exibido');
@@ -318,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
         })
         .then(data => {
-            console.log('Dados brutos recebidos:', data);
+            console.log('Dados brutos recebidos:', JSON.stringify(data, null, 2)); // Log detalhado
             hideLoading();
             if (!data || !data.users || data.users.length === 0) {
                 console.warn('Nenhum usuário encontrado ou dados inválidos:', data);
@@ -525,7 +526,9 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             if (isIndicated) {
                 row.classList.add('indicated-user');
-                console.log(`Usuário ${decodedUserId} marcado como indicado com classe 'indicated-user'`);
+                console.log(`Usuário ${decodedUserId} marcado como indicado com classe 'indicated-user', indication:`, user.indication);
+            } else {
+                console.log(`Usuário ${decodedUserId} não indicado, indication:`, user.indication);
             }
             tableBody.appendChild(row);
         });
@@ -536,7 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const query = searchInput.value.toLowerCase();
         const filteredUsers = allUsers.filter(user => 
             (user.userId && user.userId.toLowerCase().includes(query)) ||
-            (user.name && user.name.toLowerCase().includes(query))
+            (user.name && name.toLowerCase().includes(query))
         );
         populateUserTable(filteredUsers);
         console.log('Usuários filtrados:', filteredUsers.length);
@@ -608,11 +611,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 return response.json();
             })
             .then(data => {
-                console.log('Dados retornados após salvar:', data);
+                console.log('Dados retornados após salvar:', JSON.stringify(data, null, 2));
                 if (data.error) throw new Error(data.error);
                 alert('Sucesso: Dados atualizados!');
                 $('#editModal').modal('hide');
-                loadUsers(); // Recarrega a tabela para aplicar a nova classe
+                loadUsers(); // Força recarga da tabela
             })
             .catch(error => {
                 console.error('Erro ao salvar:', error);
