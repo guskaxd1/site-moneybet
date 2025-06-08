@@ -45,13 +45,18 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     exposedHeaders: ['Set-Cookie']
 }));
-app.use(express.static(path.join(__dirname, '.')));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// Rota para a raiz (/) que serve o index.html (sem autenticação)
+// Rota para a raiz (/) que serve o index.html
 app.get('/', (req, res) => {
     console.log('Rota / acessada');
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.html'), (err) => {
+        if (err) {
+            console.error('Erro ao servir index.html:', err);
+            res.status(404).send('Arquivo index.html não encontrado');
+        }
+    });
 });
 
 // Rota de teste para verificar se o servidor está funcionando
@@ -60,14 +65,19 @@ app.get('/health', (req, res) => {
     res.json({ status: 'Servidor está rodando' });
 });
 
-// Rota para buscar todos os usuários (sem autenticação)
+// Rota para buscar todos os usuários
 app.get('/users', async (req, res) => {
     try {
         console.log('Rota /users acessada');
         db = await ensureDBConnection();
         console.log('Buscando usuários na coleção registeredUsers');
         const users = await db.collection('registeredUsers').find().toArray();
-        console.log(`Encontrados ${users.length} usuários`);
+        console.log(`Encontrados ${users.length} usuários no registeredUsers`);
+
+        if (users.length === 0) {
+            console.warn('Nenhum usuário encontrado na coleção registeredUsers');
+            return res.status(200).json({ users: [], totalBalanceFromHistory: "0.00" });
+        }
 
         const usersData = await Promise.all(users.map(async (user) => {
             console.log(`Processando usuário: ${user.userId}`);
@@ -81,7 +91,11 @@ app.get('/users', async (req, res) => {
                 registeredAt: user.registeredAt,
                 paymentHistory: paymentHistory,
                 balance: 0, // Força saldo zerado
+<<<<<<< HEAD
                 expirationDate: expirationDoc ? expirationDoc.expirationDate : null
+=======
+                expirationDate: expirationDoc.expirationDate
+>>>>>>> 8245ed7f59afd38a047eba61ce75070d295d8553
             };
         }));
 
@@ -103,7 +117,7 @@ app.get('/users', async (req, res) => {
     }
 });
 
-// Rota para buscar dados de um único usuário (sem autenticação)
+// Rota para buscar dados de um único usuário
 app.get('/user/:userId', async (req, res) => {
     try {
         console.log(`Rota /user/${req.params.userId} acessada`);
@@ -129,7 +143,7 @@ app.get('/user/:userId', async (req, res) => {
     }
 });
 
-// Rota para atualizar dados do usuário (sem autenticação)
+// Rota para atualizar dados do usuário
 app.put('/user/:userId', async (req, res) => {
     try {
         console.log(`Rota PUT /user/${req.params.userId} acessada`);
@@ -138,25 +152,6 @@ app.put('/user/:userId', async (req, res) => {
         const { name, balance, expirationDate } = req.body;
 
         console.log('Dados recebidos:', { name, balance, expirationDate });
-
-        if (balance !== undefined && (isNaN(parseFloat(balance)) || parseFloat(balance) < 0)) {
-            console.warn('Validação falhou: Saldo deve ser um número positivo');
-            return res.status(400).json({ error: 'Saldo deve ser um número positivo' });
-        }
-
-        let parsedExpirationDate = null;
-        if (expirationDate !== undefined && expirationDate !== null) {
-            try {
-                parsedExpirationDate = new Date(expirationDate);
-                if (isNaN(parsedExpirationDate.getTime())) {
-                    console.warn('Validação falhou: Data de expiração inválida', { expirationDate });
-                    return res.status(400).json({ error: 'Data de expiração inválida' });
-                }
-            } catch (err) {
-                console.warn('Erro ao parsear expirationDate:', err.message, { expirationDate });
-                return res.status(400).json({ error: 'Formato de data inválido' });
-            }
-        }
 
         if (name) {
             console.log(`Atualizando nome do usuário ${userId} para ${name}`);
@@ -178,6 +173,11 @@ app.put('/user/:userId', async (req, res) => {
                 const result = await db.collection('expirationDates').deleteOne({ userId: userId });
                 console.log('Resultado da exclusão de data de expiração:', result);
             } else {
+                const parsedExpirationDate = new Date(expirationDate);
+                if (isNaN(parsedExpirationDate.getTime())) {
+                    console.warn('Validação falhou: Data de expiração inválida', { expirationDate });
+                    return res.status(400).json({ error: 'Data de expiração inválida' });
+                }
                 const result = await db.collection('expirationDates').updateOne(
                     { userId: userId },
                     { $set: { expirationDate: parsedExpirationDate.toISOString() } },
@@ -206,7 +206,50 @@ app.put('/user/:userId', async (req, res) => {
     }
 });
 
-// Rota para deletar/cancelar assinatura de um usuário (sem autenticação)
+// Rota para registrar pagamento
+app.post('/user/:userId/pay', async (req, res) => {
+    try {
+        console.log(`Rota POST /user/${req.params.userId}/pay acessada`);
+        db = await ensureDBConnection();
+        const userId = req.params.userId;
+        const { amount } = req.body;
+
+        if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+            console.warn('Validação falhou: Valor de pagamento inválido', { amount });
+            return res.status(400).json({ error: 'Valor de pagamento inválido' });
+        }
+
+        const payment = {
+            amount: parseFloat(amount),
+            timestamp: new Date(),
+            status: 'completed'
+        };
+
+        console.log(`Registrando pagamento de ${amount} para o usuário ${userId}`);
+        const result = await db.collection('registeredUsers').updateOne(
+            { userId: userId },
+            { $push: { paymentHistory: payment }, $set: { balance: 0 } },
+            { upsert: true }
+        );
+        console.log('Resultado do registro de pagamento:', result);
+
+        const updatedUser = await db.collection('registeredUsers').findOne({ userId: userId }) || {};
+        res.setHeader('Content-Type', 'application/json');
+        res.json({
+            message: 'Pagamento registrado com sucesso',
+            updatedData: {
+                userId: userId,
+                paymentHistory: updatedUser.paymentHistory || [],
+                balance: 0
+            }
+        });
+    } catch (err) {
+        console.error('Erro na rota POST /user/:userId/pay:', err.message);
+        res.status(500).json({ error: 'Erro ao processar pagamento', details: err.message });
+    }
+});
+
+// Rota para deletar/cancelar assinatura de um usuário
 app.delete('/user/:userId', async (req, res) => {
     try {
         console.log(`Rota DELETE /user/${req.params.userId} acessada`);
@@ -219,6 +262,7 @@ app.delete('/user/:userId', async (req, res) => {
         }
 
         console.log(`Cancelando assinatura do usuário ${userId}`);
+<<<<<<< HEAD
 
         const allExpirationDocs = await db.collection('expirationDates').find().toArray();
         console.log('Todos os documentos na coleção expirationDates:', allExpirationDocs);
@@ -262,11 +306,14 @@ app.delete('/user/:userId', async (req, res) => {
         }
 
         const result = await db.collection('expirationDates').deleteOne(deleteQuery);
+=======
+        const result = await db.collection('expirationDates').deleteOne({ userId: userId });
+>>>>>>> 8245ed7f59afd38a047eba61ce75070d295d8553
         console.log('Resultado da exclusão de data de expiração:', { deletedCount: result.deletedCount });
 
         if (result.deletedCount === 0) {
-            console.warn(`Falha ao excluir documento para userId ${userId} na coleção expirationDates`);
-            return res.status(500).json({ message: 'Falha ao cancelar a assinatura' });
+            console.warn(`Nenhum documento encontrado para userId ${userId} na coleção expirationDates`);
+            return res.status(404).json({ message: 'Nenhuma assinatura encontrada para cancelar' });
         }
 
         res.setHeader('Content-Type', 'application/json');
@@ -277,7 +324,7 @@ app.delete('/user/:userId', async (req, res) => {
     }
 });
 
-// Rota para deletar todos os dados de um usuário (sem autenticação)
+// Rota para deletar todos os dados de um usuário
 app.delete('/user/:userId/all', async (req, res) => {
     try {
         console.log(`Rota DELETE /user/${req.params.userId}/all acessada`);
@@ -290,6 +337,7 @@ app.delete('/user/:userId/all', async (req, res) => {
         }
 
         console.log(`Excluindo todos os dados do usuário ${userId}`);
+<<<<<<< HEAD
 
         const allExpirationDocs = await db.collection('expirationDates').find().toArray();
         const allRegisteredDocs = await db.collection('registeredUsers').find().toArray();
@@ -334,6 +382,11 @@ app.delete('/user/:userId/all', async (req, res) => {
         const expirationResult = await db.collection('expirationDates').deleteOne(deleteQuery);
         const balanceResult = await db.collection('userBalances').deleteOne(deleteQuery);
         const registeredResult = await db.collection('registeredUsers').deleteOne(deleteQuery);
+=======
+        const expirationResult = await db.collection('expirationDates').deleteOne({ userId: userId });
+        const balanceResult = await db.collection('userBalances').deleteOne({ userId: userId });
+        const registeredResult = await db.collection('registeredUsers').deleteOne({ userId: userId });
+>>>>>>> 8245ed7f59afd38a047eba61ce75070d295d8553
 
         console.log('Resultado da exclusão de expirationDates:', { deletedCount: expirationResult.deletedCount });
         console.log('Resultado da exclusão de userBalances:', { deletedCount: balanceResult.deletedCount });
@@ -356,4 +409,10 @@ app.delete('/user/:userId/all', async (req, res) => {
 
 app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
+});
+
+process.on('SIGTERM', async () => {
+    await client.close();
+    console.log('Conexão com MongoDB encerrada');
+    process.exit(0);
 });

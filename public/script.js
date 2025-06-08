@@ -560,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const requestBody = { name, balance, expirationDate };
+            const requestBody = { name, balance: 0, expirationDate }; // Força balance zerado
             console.log('Enviando atualização para o servidor:', { userId: currentUserId, requestBody });
             fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
                 method: 'PUT',
