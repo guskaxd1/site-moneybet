@@ -2,59 +2,45 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Dashboard de Assinaturas</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Login</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Login</h1>
-        </header>
-        <div id="loginForm">
-            <div>
-                <label for="username">Usuário:</label>
-                <input type="text" id="username" placeholder="Digite seu usuário" required>
-            </div>
-            <div>
-                <label for="password">Senha:</label>
-                <input type="password" id="password" placeholder="Digite sua senha" required>
-            </div>
-            <button onclick="handleLogin()">Entrar</button>
-            <p id="errorMessage" style="color: red; display: none;"></p>
-        </div>
-    </div>
+    <h2>Login</h2>
+    <form id="loginForm">
+        <label for="username">Usuário:</label>
+        <input type="text" id="username" name="username"><br>
+        <label for="password">Senha:</label>
+        <input type="password" id="password" name="password"><br>
+        <button type="submit">Entrar</button>
+    </form>
     <script>
-        function handleLogin() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const errorMessage = document.getElementById('errorMessage');
+        $(document).ready(function() {
+            $('#loginForm').on('submit', function(e) {
+                e.preventDefault();
+                const username = $('#username').val();
+                const password = $('#password').val();
 
-            fetch('/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username, password }),
-                credentials: 'include',
-                mode: 'cors'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Login bem-sucedido, redirecionando para:', data.redirect);
-                    window.location.href = data.redirect;
-                } else {
-                    errorMessage.textContent = data.message || 'Erro ao fazer login';
-                    errorMessage.style.display = 'block';
-                }
-            })
-            .catch(error => {
-                console.error('Erro ao fazer login:', error);
-                errorMessage.textContent = 'Erro ao fazer login: ' + error.message;
-                errorMessage.style.display = 'block';
+                $.ajax({
+                    url: 'https://site-moneybet.onrender.com/login',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ username, password }),
+                    xhrFields: { withCredentials: true },
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            window.location.href = '/index.html'; // Redireciona para a página principal
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Erro ao fazer login: ' + error);
+                    }
+                });
             });
-        }
+        });
     </script>
 </body>
 </html>
