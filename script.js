@@ -11,13 +11,6 @@ let cancelNameDisplay = null;
 let currentUserId = null;
 let isAuthenticated = false;
 
-// Verifica se jQuery e Bootstrap estão disponíveis
-if (typeof $ === 'undefined' || typeof $.fn.modal === 'undefined') {
-    console.error('Erro: jQuery ou Bootstrap não estão carregados. Certifique-se de incluir os scripts corretamente.');
-    alert('Erro: Dependências não carregadas. Recarregue a página ou verifique os scripts.');
-    throw new Error('Dependências ausentes');
-}
-
 // Funções globais para os botões de ação
 function openEditModal(userId, name, balance, expirationDate) {
     console.log('Abrindo modal de edição:', { userId, name, balance, expirationDate });
