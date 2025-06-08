@@ -81,7 +81,8 @@ app.get('/users', async (req, res) => {
                 registeredAt: user.registeredAt,
                 paymentHistory: paymentHistory,
                 balance: 0, // Força saldo zerado
-                expirationDate: expirationDoc ? expirationDoc.expirationDate : null
+                expirationDate: expirationDoc ? expirationDoc.expirationDate : null,
+                indication: user.indication || null // Inclui o campo indication
             };
         }));
 
@@ -121,7 +122,8 @@ app.get('/user/:userId', async (req, res) => {
             whatsapp: user.whatsapp,
             paymentHistory: paymentHistory,
             balance: 0, // Força saldo zerado
-            expirationDate: expirationDoc.expirationDate
+            expirationDate: expirationDoc.expirationDate,
+            indication: user.indication || null // Inclui o campo indication
         });
     } catch (err) {
         console.error('Erro na rota /user/:userId:', err.message);
@@ -135,9 +137,9 @@ app.put('/user/:userId', async (req, res) => {
         console.log(`Rota PUT /user/${req.params.userId} acessada`);
         db = await ensureDBConnection();
         const userId = req.params.userId;
-        const { name, balance, expirationDate } = req.body;
+        const { name, balance, expirationDate, indication } = req.body;
 
-        console.log('Dados recebidos:', { name, balance, expirationDate });
+        console.log('Dados recebidos:', { name, balance, expirationDate, indication });
 
         if (balance !== undefined && (isNaN(parseFloat(balance)) || parseFloat(balance) < 0)) {
             console.warn('Validação falhou: Saldo deve ser um número positivo');
@@ -162,10 +164,10 @@ app.put('/user/:userId', async (req, res) => {
             console.log(`Atualizando nome do usuário ${userId} para ${name}`);
             const result = await db.collection('registeredUsers').updateOne(
                 { userId: userId },
-                { $set: { name: name } },
+                { $set: { name: name, indication: indication || null } }, // Adiciona indication aqui
                 { upsert: true }
             );
-            console.log('Resultado da atualização de nome:', result);
+            console.log('Resultado da atualização de nome e indicação:', result);
         }
 
         if (balance !== undefined) {
@@ -197,7 +199,8 @@ app.put('/user/:userId', async (req, res) => {
                 name: updatedUser.name,
                 paymentHistory: updatedUser.paymentHistory || [],
                 balance: 0, // Força saldo zerado
-                expirationDate: updatedExpiration.expirationDate
+                expirationDate: updatedExpiration.expirationDate,
+                indication: updatedUser.indication || null // Inclui o campo indication na resposta
             }
         });
     } catch (err) {
