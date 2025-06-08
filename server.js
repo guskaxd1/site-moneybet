@@ -40,7 +40,7 @@ async function ensureDBConnection() {
 
 // Configurar middleware
 app.use(cors({
-    origin: '*', // Permitir qualquer origem durante o desenvolvimento
+    origin: '*',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     exposedHeaders: ['Set-Cookie']
@@ -71,7 +71,7 @@ app.get('/users', async (req, res) => {
 
         const usersData = await Promise.all(users.map(async (user) => {
             console.log(`Processando usuário: ${user.userId}`);
-            const balanceDoc = await db.collection('userBalances').findOne({ userId: user.userId }) || { balance: 0 };
+            const paymentHistory = user.paymentHistory || [];
             const expirationDoc = await db.collection('expirationDates').findOne({ userId: user.userId }) || { expirationDate: null };
 
             return {
@@ -79,15 +79,24 @@ app.get('/users', async (req, res) => {
                 name: user.name,
                 whatsapp: user.whatsapp,
                 registeredAt: user.registeredAt,
-                paymentHistory: user.paymentHistory || [],
-                balance: balanceDoc.balance,
+                paymentHistory: paymentHistory,
+                balance: 0, // Força saldo zerado
                 expirationDate: expirationDoc ? expirationDoc.expirationDate : null
             };
         }));
 
+        // Calcular Saldo Total com base no paymentHistory
+        const totalBalanceFromHistory = users.reduce((sum, user) => {
+            const paymentHistory = user.paymentHistory || [];
+            return sum + paymentHistory.reduce((total, payment) => total + (parseFloat(payment.amount) || 0), 0);
+        }, 0);
+
         console.log('Enviando resposta com os dados dos usuários:', usersData);
         res.setHeader('Content-Type', 'application/json');
-        res.json(usersData);
+        res.json({
+            users: usersData,
+            totalBalanceFromHistory: totalBalanceFromHistory.toFixed(2)
+        });
     } catch (err) {
         console.error('Erro na rota /users:', err.message);
         res.status(500).json({ error: 'Erro ao buscar usuários', details: err.message });
@@ -101,13 +110,18 @@ app.get('/user/:userId', async (req, res) => {
         db = await ensureDBConnection();
         const userId = req.params.userId;
 
-        const balance = await db.collection('userBalances').findOne({ userId: userId }) || { balance: 0 };
-        const expiration = await db.collection('expirationDates').findOne({ userId: userId }) || { expirationDate: null };
+        const user = await db.collection('registeredUsers').findOne({ userId: userId }) || {};
+        const paymentHistory = user.paymentHistory || [];
+        const expirationDoc = await db.collection('expirationDates').findOne({ userId: userId }) || { expirationDate: null };
 
         res.setHeader('Content-Type', 'application/json');
         res.json({
-            balance: balance.balance,
-            expirationDate: expiration.expirationDate
+            userId: user.userId,
+            name: user.name,
+            whatsapp: user.whatsapp,
+            paymentHistory: paymentHistory,
+            balance: 0, // Força saldo zerado
+            expirationDate: expirationDoc.expirationDate
         });
     } catch (err) {
         console.error('Erro na rota /user/:userId:', err.message);
@@ -155,13 +169,7 @@ app.put('/user/:userId', async (req, res) => {
         }
 
         if (balance !== undefined) {
-            console.log(`Atualizando saldo do usuário ${userId} para ${balance}`);
-            const result = await db.collection('userBalances').updateOne(
-                { userId: userId },
-                { $set: { balance: parseFloat(balance) } },
-                { upsert: true }
-            );
-            console.log('Resultado da atualização de saldo:', result);
+            console.warn('Atualização de saldo ignorada, mantendo saldo zerado');
         }
 
         if (expirationDate !== undefined) {
@@ -179,16 +187,17 @@ app.put('/user/:userId', async (req, res) => {
             }
         }
 
-        const updatedBalance = await db.collection('userBalances').findOne({ userId: userId }) || { balance: 0 };
+        const updatedUser = await db.collection('registeredUsers').findOne({ userId: userId }) || {};
         const updatedExpiration = await db.collection('expirationDates').findOne({ userId: userId }) || { expirationDate: null };
-        const updatedUser = await db.collection('registeredUsers').findOne({ userId: userId });
         res.setHeader('Content-Type', 'application/json');
         res.json({
             message: 'Dados atualizados com sucesso',
             updatedData: {
-                balance: updatedBalance.balance,
-                expirationDate: updatedExpiration.expirationDate,
-                name: updatedUser ? updatedUser.name : null
+                userId: userId,
+                name: updatedUser.name,
+                paymentHistory: updatedUser.paymentHistory || [],
+                balance: 0, // Força saldo zerado
+                expirationDate: updatedExpiration.expirationDate
             }
         });
     } catch (err) {
@@ -211,15 +220,12 @@ app.delete('/user/:userId', async (req, res) => {
 
         console.log(`Cancelando assinatura do usuário ${userId}`);
 
-        // Listar todos os documentos na coleção expirationDates para depuração
         const allExpirationDocs = await db.collection('expirationDates').find().toArray();
         console.log('Todos os documentos na coleção expirationDates:', allExpirationDocs);
 
-        // Tentar encontrar o documento como string
         let existingDoc = await db.collection('expirationDates').findOne({ userId: userId });
         console.log('Documento encontrado como string:', existingDoc);
 
-        // Se não encontrado, tentar como número
         if (!existingDoc) {
             const userIdAsNumber = parseInt(userId);
             if (!isNaN(userIdAsNumber)) {
@@ -228,7 +234,6 @@ app.delete('/user/:userId', async (req, res) => {
             }
         }
 
-        // Se não encontrado, tentar com ObjectId (pouco provável, mas para cobrir todos os casos)
         if (!existingDoc) {
             try {
                 existingDoc = await db.collection('expirationDates').findOne({ userId: new ObjectId(userId) });
@@ -243,7 +248,6 @@ app.delete('/user/:userId', async (req, res) => {
             return res.status(404).json({ message: 'Nenhuma assinatura encontrada para cancelar' });
         }
 
-        // Determinar o tipo do userId no documento encontrado
         const userIdInDoc = existingDoc.userId;
         let deleteQuery;
         if (typeof userIdInDoc === 'string') {
@@ -287,7 +291,6 @@ app.delete('/user/:userId/all', async (req, res) => {
 
         console.log(`Excluindo todos os dados do usuário ${userId}`);
 
-        // Listar documentos em todas as coleções para depuração
         const allExpirationDocs = await db.collection('expirationDates').find().toArray();
         const allRegisteredDocs = await db.collection('registeredUsers').find().toArray();
         const allBalanceDocs = await db.collection('userBalances').find().toArray();
@@ -295,7 +298,6 @@ app.delete('/user/:userId/all', async (req, res) => {
         console.log('Documentos na coleção registeredUsers:', allRegisteredDocs);
         console.log('Documentos na coleção userBalances:', allBalanceDocs);
 
-        // Tentar encontrar o documento principal (registeredUsers) para determinar o tipo de userId
         let userDoc = await db.collection('registeredUsers').findOne({ userId: userId });
         if (!userDoc) {
             const userIdAsNumber = parseInt(userId);
@@ -329,7 +331,6 @@ app.delete('/user/:userId/all', async (req, res) => {
             return res.status(500).json({ error: 'Erro interno: Tipo de userId desconhecido' });
         }
 
-        // Excluir de todas as coleções
         const expirationResult = await db.collection('expirationDates').deleteOne(deleteQuery);
         const balanceResult = await db.collection('userBalances').deleteOne(deleteQuery);
         const registeredResult = await db.collection('registeredUsers').deleteOne(deleteQuery);

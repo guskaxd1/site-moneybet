@@ -19,7 +19,7 @@ function openEditModal(userId, name, balance, expirationDate) {
     currentUserId = userId;
     editIdInput.value = userId || '-';
     editNameInput.value = name || '-';
-    editBalanceInput.value = (balance || 0).toFixed(2);
+    editBalanceInput.value = (0).toFixed(2); // Sempre zerado
     
     if (expirationDate) {
         try {
@@ -88,7 +88,6 @@ function openCancelModal(userId, name) {
     $('#cancelModal').modal('show');
     console.log('Modal de cancelamento exibido');
 
-    // Associar o evento ao botão "Cancelar Assinatura"
     const cancelSubscriptionBtn = document.querySelector('#cancelModal .delete-btn');
     if (cancelSubscriptionBtn) {
         const newCancelBtn = cancelSubscriptionBtn.cloneNode(true);
@@ -130,7 +129,6 @@ function openCancelModal(userId, name) {
         console.error('Erro: Botão "Cancelar Assinatura" não encontrado');
     }
 
-    // Associar o evento ao botão "Excluir Todos os Dados"
     const deleteAllBtn = document.querySelector('#cancelModal .delete-all-btn');
     if (deleteAllBtn) {
         const newDeleteAllBtn = deleteAllBtn.cloneNode(true);
@@ -180,7 +178,6 @@ function openCancelModal(userId, name) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Script iniciado: Carregando dados...');
 
-    // Elementos do DOM
     const tableBody = document.getElementById('usersTableBody');
     const totalUsersEl = document.getElementById('total-users');
     const totalBalanceEl = document.getElementById('total-balance');
@@ -204,7 +201,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorDiv = document.getElementById('error');
     let allUsers = [];
 
-    // Verificar se todos os elementos foram encontrados
     if (!tableBody || !totalUsersEl || !totalBalanceEl || !activeSubscriptionsEl || !expiredSubscriptionsEl || !sidebar || !menuToggle || !searchContainer || !searchInput || !usersTable || !logoutBtn || !editModal || !cancelModal || !editIdInput || !editNameInput || !editBalanceInput || !editExpirationInput || !editDaysRemainingInput || !cancelNameDisplay || !loadingDiv || !errorDiv) {
         console.error('Erro: Um ou mais elementos DOM não foram encontrados:', {
             tableBody, totalUsersEl, totalBalanceEl, activeSubscriptionsEl, expiredSubscriptionsEl, sidebar, menuToggle, searchContainer, searchInput, usersTable, logoutBtn, editModal, cancelModal, editIdInput, editNameInput, editBalanceInput, editExpirationInput, editDaysRemainingInput, cancelNameDisplay, loadingDiv, errorDiv
@@ -212,13 +208,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Alternar menu em telas menores
     menuToggle.addEventListener('click', () => {
         sidebar.classList.toggle('active');
         console.log('Menu toggle clicado, estado:', sidebar.classList.contains('active'));
     });
 
-    // Função para gerenciar a navegação ativa
     const navLinks = document.querySelectorAll('.sidebar-nav a');
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
@@ -244,7 +238,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Função para carregar o Dashboard (estatísticas)
     function loadDashboard() {
         console.log('Carregando Dashboard...');
         showLoading();
@@ -271,18 +264,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return response.json();
         })
-        .then(users => {
-            console.log('Dados brutos recebidos:', users);
+        .then(data => {
+            console.log('Dados brutos recebidos:', data);
             hideLoading();
-            if (!users || !Array.isArray(users)) {
-                console.warn('Dados inválidos ou ausentes:', users);
+            if (!data || !data.users || data.users.length === 0) {
+                console.warn('Dados inválidos ou ausentes:', data);
                 updateDashboardStats([]);
                 showError('Nenhum dado disponível.');
                 return;
             }
-            allUsers = users;
-            updateDashboardStats(users);
-            console.log('Dashboard atualizado com:', users);
+            allUsers = data.users;
+            updateDashboardStats(data);
+            console.log('Dashboard atualizado com:', data.users);
         })
         .catch(error => {
             hideLoading();
@@ -293,7 +286,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Função para carregar Usuários (lista de usuários)
     function loadUsers() {
         console.log('Carregando Usuários...');
         showLoading();
@@ -320,19 +312,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return response.json();
         })
-        .then(users => {
-            console.log('Dados brutos recebidos:', users);
+        .then(data => {
+            console.log('Dados brutos recebidos:', data);
             hideLoading();
-            if (!users || !Array.isArray(users)) {
-                console.warn('Nenhum usuário encontrado ou dados inválidos:', users);
+            if (!data || !data.users || data.users.length === 0) {
+                console.warn('Nenhum usuário encontrado ou dados inválidos:', data);
                 tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário encontrado.</td></tr>';
-                updateDashboardStats([]);
+                updateDashboardStats(data);
                 return;
             }
-            allUsers = users;
-            updateDashboardStats(users);
-            populateUserTable(users);
-            console.log('Usuários carregados:', users);
+            allUsers = data.users;
+            updateDashboardStats(data);
+            populateUserTable(data.users);
+            console.log('Usuários carregados:', data.users);
         })
         .catch(error => {
             hideLoading();
@@ -344,7 +336,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Função para carregar Usuários Registrados (somente registrados e sem pagamento)
     function loadRegisteredUsers() {
         console.log('Carregando Usuários Registrados...');
         showLoading();
@@ -371,29 +362,27 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return response.json();
         })
-        .then(users => {
-            console.log('Dados brutos recebidos:', users);
+        .then(data => {
+            console.log('Dados brutos recebidos:', data);
             hideLoading();
-            if (!users || !Array.isArray(users)) {
-                console.warn('Nenhum usuário encontrado ou dados inválidos:', users);
+            if (!data || !data.users || data.users.length === 0) {
+                console.warn('Nenhum usuário encontrado ou dados inválidos:', data);
                 tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário registrado encontrado.</td></tr>';
-                updateDashboardStats([]);
+                updateDashboardStats(data);
                 return;
             }
-            allUsers = users;
-            // Filtrar usuários registrados sem pagamento (sem paymentHistory ou saldo zero e sem expirationDate)
-            const registeredUsers = users.filter(user => {
+            allUsers = data.users;
+            const registeredUsers = data.users.filter(user => {
                 const hasNoPaymentHistory = !user.paymentHistory || user.paymentHistory.length === 0;
-                const hasNoBalance = !user.balance || parseFloat(user.balance) === 0;
                 const hasNoExpiration = !user.expirationDate;
-                return hasNoPaymentHistory && hasNoBalance && hasNoExpiration;
+                return hasNoPaymentHistory && hasNoExpiration;
             });
             if (registeredUsers.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário registrado sem pagamento encontrado.</td></tr>';
             } else {
                 populateUserTable(registeredUsers);
             }
-            updateDashboardStats(registeredUsers); // Atualiza stats apenas com os filtrados
+            updateDashboardStats(data);
             console.log('Usuários registrados carregados:', registeredUsers);
         })
         .catch(error => {
@@ -406,7 +395,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Função para carregar Usuários Ativos (somente usuários que pagaram)
     function loadActiveUsers() {
         console.log('Carregando Usuários Ativos...');
         showLoading();
@@ -433,29 +421,27 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return response.json();
         })
-        .then(users => {
-            console.log('Dados brutos recebidos:', users);
+        .then(data => {
+            console.log('Dados brutos recebidos:', data);
             hideLoading();
-            if (!users || !Array.isArray(users)) {
-                console.warn('Nenhum usuário encontrado ou dados inválidos:', users);
+            if (!data || !data.users || data.users.length === 0) {
+                console.warn('Nenhum usuário encontrado ou dados inválidos:', data);
                 tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário ativo encontrado.</td></tr>';
-                updateDashboardStats([]);
+                updateDashboardStats(data);
                 return;
             }
-            allUsers = users;
-            // Filtrar usuários que pagaram (com paymentHistory ou saldo > 0 e expirationDate)
-            const activeUsers = users.filter(user => {
+            allUsers = data.users;
+            const activeUsers = data.users.filter(user => {
                 const hasPaymentHistory = user.paymentHistory && user.paymentHistory.length > 0;
-                const hasBalance = user.balance && parseFloat(user.balance) > 0;
                 const hasExpiration = user.expirationDate;
-                return (hasPaymentHistory || hasBalance) && hasExpiration;
+                return hasPaymentHistory && hasExpiration;
             });
             if (activeUsers.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário ativo encontrado.</td></tr>';
             } else {
                 populateUserTable(activeUsers);
             }
-            updateDashboardStats(activeUsers); // Atualiza stats apenas com os filtrados
+            updateDashboardStats(data);
             console.log('Usuários ativos carregados:', activeUsers);
         })
         .catch(error => {
@@ -468,17 +454,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Função para atualizar estatísticas no painel
-    function updateDashboardStats(users) {
+    function updateDashboardStats(data) {
+        const users = data.users || [];
         const totalUsers = users.length;
         let totalBalance = 0;
         users.forEach(user => {
-            const balance = parseFloat(user.balance);
-            if (isNaN(balance)) {
-                console.warn(`Saldo inválido para usuário ${user.userId || 'sem ID'}:`, user.balance);
-            } else {
-                totalBalance += balance;
-            }
+            const paymentHistory = user.paymentHistory || [];
+            totalBalance += paymentHistory.reduce((total, payment) => total + (parseFloat(payment.amount) || 0), 0);
         });
         const currentDate = new Date();
         const activeSubscriptions = users.filter(user => {
@@ -499,12 +481,11 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Estatísticas atualizadas:', { totalUsers, totalBalance, activeSubscriptions, expiredSubscriptions });
     }
 
-    // Função para popular a tabela de usuários
     function populateUserTable(users) {
         tableBody.innerHTML = '';
         users.forEach(user => {
             const row = document.createElement('tr');
-            const balanceValue = parseFloat(user.balance) || 0;
+            const balanceValue = 0; // Sempre zerado
             const expirationDate = user.expirationDate ? new Date(user.expirationDate) : null;
             const expirationValue = expirationDate ? expirationDate.toLocaleDateString('pt-BR') : '-';
             const daysRemaining = calculateDaysRemaining(user.expirationDate);
@@ -527,7 +508,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Tabela de usuários populada com', users.length, 'entradas');
     }
 
-    // Função para filtrar usuários com base na pesquisa
     function filterUsers() {
         const query = searchInput.value.toLowerCase();
         const filteredUsers = allUsers.filter(user => 
@@ -538,10 +518,8 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Usuários filtrados:', filteredUsers.length);
     }
 
-    // Adicionar evento de pesquisa
     searchInput.addEventListener('input', filterUsers);
 
-    // Atualizar dias restantes ao mudar a data de expiração
     editExpirationInput.addEventListener('change', () => {
         const selectedDate = new Date(editExpirationInput.value);
         if (selectedDate && !isNaN(selectedDate.getTime())) {
@@ -553,12 +531,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Salvar alterações
     const saveBtn = document.querySelector('.save-btn');
     if (saveBtn) {
         saveBtn.addEventListener('click', () => {
             const name = editNameInput.value.trim();
-            const balance = parseFloat(editBalanceInput.value);
+            const balance = 0; // Sempre zerado
             let expirationDate = null;
 
             if (editExpirationInput.value) {
@@ -580,10 +557,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!name) {
                 alert('Erro: Nome não pode estar vazio.');
-                return;
-            }
-            if (isNaN(balance) || balance < 0) {
-                alert('Erro: Saldo inválido. Insira um número positivo.');
                 return;
             }
 
@@ -625,41 +598,34 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Erro: Botão "Salvar Alterações" não encontrado');
     }
 
-    // Fechar modais ao clicar fora ou no botão de fechar
     $('#editModal, #cancelModal').on('hidden.bs.modal', () => {
         currentUserId = null;
         console.log('Modal fechado');
     });
 
-    // Função para mostrar estado de carregamento
     function showLoading() {
         loadingDiv.style.display = 'block';
         errorDiv.style.display = 'none';
         console.log('Exibindo estado de carregamento');
     }
 
-    // Função para ocultar estado de carregamento
     function hideLoading() {
         loadingDiv.style.display = 'none';
         console.log('Ocultando estado de carregamento');
     }
 
-    // Função para mostrar erro
     function showError(message) {
         errorDiv.textContent = message;
         errorDiv.style.display = 'block';
         console.log('Erro exibido:', message);
     }
 
-    // Função para logout (desativada, mas mantida para compatibilidade)
     function handleLogout() {
         console.log('Logout solicitado (desativado temporariamente)');
         window.location.href = '/';
     }
 
-    // Adicionar evento de logout
     logoutBtn.addEventListener('click', handleLogout);
 
-    // Inicializar com a aba Usuários
     loadUsers();
 });
