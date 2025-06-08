@@ -6,13 +6,14 @@ let editNameInput = null;
 let editBalanceInput = null;
 let editExpirationInput = null;
 let editDaysRemainingInput = null;
+let editIndicationInput = null; // Novo campo para Indicação
 let cancelNameDisplay = null;
 let currentUserId = null;
 
 // Funções globais para os botões de ação
 function openEditModal(userId, name, balance, expirationDate) {
     console.log('Abrindo modal de edição:', { userId, name, balance, expirationDate });
-    if (!editModal || !editIdInput || !editNameInput || !editBalanceInput || !editExpirationInput || !editDaysRemainingInput) {
+    if (!editModal || !editIdInput || !editNameInput || !editBalanceInput || !editExpirationInput || !editDaysRemainingInput || !editIndicationInput) {
         console.error('Erro: Alguns elementos do modal de edição não foram encontrados');
         return;
     }
@@ -41,6 +42,9 @@ function openEditModal(userId, name, balance, expirationDate) {
         editExpirationInput.value = '';
         editDaysRemainingInput.value = '0 dias';
     }
+
+    // Configurar o campo Indicação com "Soneca" como única opção
+    editIndicationInput.value = 'Soneca'; // Definir como "Soneca" por padrão
 
     $('#editModal').modal('show');
     console.log('Modal de edição exibido');
@@ -196,14 +200,15 @@ document.addEventListener('DOMContentLoaded', () => {
     editBalanceInput = document.getElementById('edit-balance');
     editExpirationInput = document.getElementById('edit-expiration');
     editDaysRemainingInput = document.getElementById('edit-days-remaining');
+    editIndicationInput = document.getElementById('edit-indication'); // Novo elemento DOM
     cancelNameDisplay = document.getElementById('cancel-name');
     const loadingDiv = document.getElementById('loading');
     const errorDiv = document.getElementById('error');
     let allUsers = [];
 
-    if (!tableBody || !totalUsersEl || !totalBalanceEl || !activeSubscriptionsEl || !expiredSubscriptionsEl || !sidebar || !menuToggle || !searchContainer || !searchInput || !usersTable || !logoutBtn || !editModal || !cancelModal || !editIdInput || !editNameInput || !editBalanceInput || !editExpirationInput || !editDaysRemainingInput || !cancelNameDisplay || !loadingDiv || !errorDiv) {
+    if (!tableBody || !totalUsersEl || !totalBalanceEl || !activeSubscriptionsEl || !expiredSubscriptionsEl || !sidebar || !menuToggle || !searchContainer || !searchInput || !usersTable || !logoutBtn || !editModal || !cancelModal || !editIdInput || !editNameInput || !editBalanceInput || !editExpirationInput || !editDaysRemainingInput || !editIndicationInput || !cancelNameDisplay || !loadingDiv || !errorDiv) {
         console.error('Erro: Um ou mais elementos DOM não foram encontrados:', {
-            tableBody, totalUsersEl, totalBalanceEl, activeSubscriptionsEl, expiredSubscriptionsEl, sidebar, menuToggle, searchContainer, searchInput, usersTable, logoutBtn, editModal, cancelModal, editIdInput, editNameInput, editBalanceInput, editExpirationInput, editDaysRemainingInput, cancelNameDisplay, loadingDiv, errorDiv
+            tableBody, totalUsersEl, totalBalanceEl, activeSubscriptionsEl, expiredSubscriptionsEl, sidebar, menuToggle, searchContainer, searchInput, usersTable, logoutBtn, editModal, cancelModal, editIdInput, editNameInput, editBalanceInput, editExpirationInput, editDaysRemainingInput, editIndicationInput, cancelNameDisplay, loadingDiv, errorDiv
         });
         return;
     }
@@ -550,6 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = editNameInput.value.trim();
             const balance = 0; // Sempre zerado
             let expirationDate = null;
+            const indication = editIndicationInput.value; // Valor do campo Indicação
 
             if (editExpirationInput.value) {
                 try {
@@ -573,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const requestBody = { name, balance: 0, expirationDate }; // Força balance zerado
+            const requestBody = { name, balance: 0, expirationDate, indication }; // Inclui o campo Indicação
             console.log('Enviando atualização para o servidor:', { userId: currentUserId, requestBody });
             fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
                 method: 'PUT',
