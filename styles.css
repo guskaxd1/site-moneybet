@@ -197,19 +197,6 @@
     background: #34495e;
 }
 
-/* Conteúdo principal */
-.main-content {
-    margin-left: 50px;
-    padding: 20px;
-    width: calc(100% - 50px);
-    transition: margin-left 0.3s ease, width 0.3s ease;
-}
-
-.sidebar.active ~ .main-content {
-    margin-left: 200px;
-    width: calc(100% - 200px);
-}
-
 /* Header */
 header {
     display: flex;
@@ -223,6 +210,17 @@ header {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     z-index: 1000;
     position: relative;
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-logo {
+    max-width: 150px;
+    height: auto;
 }
 
 header h1 {
@@ -307,6 +305,15 @@ header h1 {
     max-width: 150px;
     white-space: normal;
     vertical-align: middle;
+}
+
+#usersTable th:nth-child(5),
+#usersTable td:nth-child(5) {
+    max-width: 200px; /* Aumenta a largura máxima para acomodar mais texto */
+    white-space: nowrap; /* Evita quebras de linha automáticas */
+    overflow: hidden; /* Oculta o texto que exceder */
+    text-overflow: ellipsis; /* Adiciona "..." quando o texto é cortado */
+    padding: 4px; /* Reduz o padding para economizar espaço */
 }
 
 #usersTable th {
@@ -550,6 +557,15 @@ header h1 {
 
     #usersTable th:nth-child(5),
     #usersTable td:nth-child(5) {
+        max-width: 150px; /* Ajuste para telas menores */
+    }
+
+    #usersTable th:nth-child(3),
+    #usersTable td:nth-child(3),
+    #usersTable th:nth-child(5),
+    #usersTable td:nth-child(5),
+    #usersTable th:nth-child(6),
+    #usersTable td:nth-child(6) {
         display: none;
     }
 
@@ -603,6 +619,11 @@ header h1 {
         padding: 4px;
         font-size: 9px;
         max-width: 80px;
+    }
+
+    #usersTable th:nth-child(5),
+    #usersTable td:nth-child(5) {
+        max-width: 120px; /* Ajuste para telas muito pequenas */
     }
 
     #usersTable th:nth-child(3),
