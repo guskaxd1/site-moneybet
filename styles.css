@@ -309,6 +309,15 @@ header h1 {
     vertical-align: middle;
 }
 
+#usersTable th:nth-child(5),
+#usersTable td:nth-child(5) {
+    max-width: 250px; /* Aumentado para acomodar mais texto */
+    white-space: nowrap; /* Evita quebras de linha */
+    overflow: hidden; /* Oculta texto excedente */
+    text-overflow: ellipsis; /* Adiciona "..." quando cortado */
+    padding: 6px;
+}
+
 #usersTable th {
     background-color: #34495e;
     color: #ecf0f1;
