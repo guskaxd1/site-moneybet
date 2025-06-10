@@ -213,7 +213,7 @@ header h1 {
 
 #usersTable th,
 #usersTable td {
-    padding: 8px;
+    padding: 6px;
     text-align: center;
     border-bottom: 1px solid #ddd;
     word-break: break-all;
