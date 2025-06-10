@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             console.log('Timer expirado. Redirecionando para login.html');
             window.location.href = '/login.html';
-        }, 1000); // 1 segundo
+        }, 1000); // 1 segundo1
     } else {
         console.log('Usuário está logado. Acesso permitido.');
     }
@@ -348,20 +348,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const daysRemaining = calculateDaysRemaining(user.expirationDate);
             const decodedUserId = decodeURIComponent(user.userId || '-');
             const decodedName = decodeURIComponent(user.name || '-');
-            // Formatar Data Pagamentos de forma compacta com separador ';'
-            const paymentHistoryText = Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0
-                ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${formatDate(new Date(p.timestamp))})`).join('; ')
-                : '-';
-            const paymentHistoryTitle = Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0
-                ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${formatDate(new Date(p.timestamp))})`).join('\n')
-                : '-';
             const isIndicated = user.indication === 'Soneca';
             row.innerHTML = `
                 <td>${decodedUserId}</td>
                 <td>${decodedName}</td>
                 <td>${user.whatsapp || '-'}</td>
                 <td title="${registeredAt ? registeredAt.toLocaleDateString('pt-BR') : '-'}">${registeredValue}</td>
-                <td title="${paymentHistoryTitle}">${paymentHistoryText}</td>
+                <td>${Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0 ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${formatDate(new Date(p.timestamp))})`).join('<br>') : '-'}</td>
                 <td>${balanceValue.toFixed(2)}</td>
                 <td title="${expirationDate ? expirationDate.toLocaleDateString('pt-BR') : '-'}">${expirationValue}</td>
                 <td>${daysRemaining}</td>
@@ -504,14 +497,14 @@ document.addEventListener('DOMContentLoaded', () => {
     logoutBtn.addEventListener('click', handleLogout);
 
     // Funções globais para os botões de ação
-    window.openEditModal = function(userId, name, balance, expirationDate) {
+    function openEditModal(userId, name, balance, expirationDate) {
         console.log('Abrindo modal de edição:', { userId, name, balance, expirationDate });
         if (!editModal || !editIdInput || !editNameInput || !editBalanceInput || !editExpirationInput || !editDaysRemainingInput || !editIndicationInput) {
             console.error('Erro: Alguns elementos do modal de edição não foram encontrados');
             return;
         }
         currentUserId = userId;
-        editIdInput.textContent = userId || '-';
+        editIdInput.value = userId || '-';
         editNameInput.value = name || '-';
         editBalanceInput.value = (0).toFixed(2);
         
@@ -541,7 +534,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         $('#editModal').modal('show');
         console.log('Modal de edição exibido');
-    };
+    }
 
     function updateDaysRemaining(expirationDate) {
         if (!editDaysRemainingInput) {
@@ -573,7 +566,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    window.openCancelModal = function(userId, name) {
+    function openCancelModal(userId, name) {
         console.log('Abrindo modal de cancelamento:', { userId, name });
         if (!cancelModal || !cancelNameDisplay) {
             console.error('Erro: Elementos do modal de cancelamento não foram encontrados');
