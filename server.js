@@ -3,6 +3,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 const path = require('path');
 require('dotenv').config();
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -47,10 +48,20 @@ app.use(cors({
 }));
 app.use(express.static(path.join(__dirname, '.')));
 app.use(express.json());
+app.use(cookieParser());
 
-// Rota para a raiz (/) que serve o index.html (sem autenticação)
+// Rota para a raiz (/) que serve o login.html como página inicial
 app.get('/', (req, res) => {
     console.log('Rota / acessada');
+    res.sendFile(path.join(__dirname, 'login.html'));
+});
+
+// Rota para servir index.html apenas para usuários autenticados
+app.get('/index.html', (req, res, next) => {
+    if (!req.cookies.auth || req.cookies.auth !== 'true') {
+        console.log('Usuário não autenticado, redirecionando para login');
+        return res.redirect('/');
+    }
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
@@ -60,12 +71,11 @@ app.get('/health', (req, res) => {
     res.json({ status: 'Servidor está rodando' });
 });
 
-// Rota para buscar todos os usuários (sem autenticação)
+// Rota para buscar todos os usuários
 app.get('/users', async (req, res) => {
     try {
         console.log('Rota /users acessada');
         db = await ensureDBConnection();
-        console.log('Buscando usuários na coleção registeredUsers');
         const users = await db.collection('registeredUsers').find().toArray();
         console.log(`Encontrados ${users.length} usuários`);
 
@@ -80,13 +90,12 @@ app.get('/users', async (req, res) => {
                 whatsapp: user.whatsapp,
                 registeredAt: user.registeredAt,
                 paymentHistory: paymentHistory,
-                balance: 0, // Força saldo zerado
+                balance: 0,
                 expirationDate: expirationDoc ? expirationDoc.expirationDate : null,
-                indication: user.indication || null // Inclui o campo indication
+                indication: user.indication || null
             };
         }));
 
-        // Calcular Saldo Total com base no paymentHistory
         const totalBalanceFromHistory = users.reduce((sum, user) => {
             const paymentHistory = user.paymentHistory || [];
             return sum + paymentHistory.reduce((total, payment) => total + (parseFloat(payment.amount) || 0), 0);
@@ -104,7 +113,7 @@ app.get('/users', async (req, res) => {
     }
 });
 
-// Rota para buscar dados de um único usuário (sem autenticação)
+// Rota para buscar dados de um único usuário
 app.get('/user/:userId', async (req, res) => {
     try {
         console.log(`Rota /user/${req.params.userId} acessada`);
@@ -121,9 +130,9 @@ app.get('/user/:userId', async (req, res) => {
             name: user.name,
             whatsapp: user.whatsapp,
             paymentHistory: paymentHistory,
-            balance: 0, // Força saldo zerado
+            balance: 0,
             expirationDate: expirationDoc.expirationDate,
-            indication: user.indication || null // Inclui o campo indication
+            indication: user.indication || null
         });
     } catch (err) {
         console.error('Erro na rota /user/:userId:', err.message);
@@ -131,7 +140,7 @@ app.get('/user/:userId', async (req, res) => {
     }
 });
 
-// Rota para atualizar dados do usuário (sem autenticação)
+// Rota para atualizar dados do usuário
 app.put('/user/:userId', async (req, res) => {
     try {
         console.log(`Rota PUT /user/${req.params.userId} acessada`);
@@ -164,7 +173,7 @@ app.put('/user/:userId', async (req, res) => {
             console.log(`Atualizando nome do usuário ${userId} para ${name}`);
             const result = await db.collection('registeredUsers').updateOne(
                 { userId: userId },
-                { $set: { name: name, indication: indication || null } }, // Adiciona indication aqui
+                { $set: { name: name, indication: indication || null } },
                 { upsert: true }
             );
             console.log('Resultado da atualização de nome e indicação:', result);
@@ -198,9 +207,9 @@ app.put('/user/:userId', async (req, res) => {
                 userId: userId,
                 name: updatedUser.name,
                 paymentHistory: updatedUser.paymentHistory || [],
-                balance: 0, // Força saldo zerado
+                balance: 0,
                 expirationDate: updatedExpiration.expirationDate,
-                indication: updatedUser.indication || null // Inclui o campo indication na resposta
+                indication: updatedUser.indication || null
             }
         });
     } catch (err) {
@@ -209,7 +218,7 @@ app.put('/user/:userId', async (req, res) => {
     }
 });
 
-// Rota para deletar/cancelar assinatura de um usuário (sem autenticação)
+// Rota para deletar/cancelar assinatura de um usuário
 app.delete('/user/:userId', async (req, res) => {
     try {
         console.log(`Rota DELETE /user/${req.params.userId} acessada`);
@@ -280,7 +289,7 @@ app.delete('/user/:userId', async (req, res) => {
     }
 });
 
-// Rota para deletar todos os dados de um usuário (sem autenticação)
+// Rota para deletar todos os dados de um usuário
 app.delete('/user/:userId/all', async (req, res) => {
     try {
         console.log(`Rota DELETE /user/${req.params.userId}/all acessada`);
@@ -355,6 +364,35 @@ app.delete('/user/:userId/all', async (req, res) => {
         console.error('Erro na rota DELETE /user/:userId/all:', err.message);
         res.status(500).json({ error: 'Erro ao excluir todos os dados', details: err.message });
     }
+});
+
+// Rota para login
+app.post('/login', (req, res) => {
+    console.log('Rota /login acessada');
+    const { username, password } = req.body;
+
+    if (username === 'admin' && password === '123') {
+        res.cookie('auth', 'true', { maxAge: 3600000, httpOnly: true });
+        console.log('Login bem-sucedido, cookie definido');
+        res.json({ success: true, message: 'Login bem-sucedido' });
+    } else {
+        console.log('Credenciais inválidas');
+        res.status(401).json({ success: false, message: 'Credenciais inválidas' });
+    }
+});
+
+// Rota para verificar autenticação
+app.get('/check-auth', (req, res) => {
+    console.log('Rota /check-auth acessada');
+    const isAuthenticated = req.cookies.auth === 'true';
+    res.json({ isAuthenticated });
+});
+
+// Rota para logout
+app.post('/logout', (req, res) => {
+    console.log('Rota /logout acessada');
+    res.clearCookie('auth');
+    res.json({ success: true, message: 'Logout bem-sucedido' });
 });
 
 app.listen(port, () => {

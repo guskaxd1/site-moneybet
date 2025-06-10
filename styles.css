@@ -11,12 +11,6 @@ body {
     overflow-x: hidden; /* Evita scroll horizontal indesejado */
 }
 
-/* Layout principal */
-.layout {
-    display: flex;
-    min-height: 100vh;
-}
-
 /* Menu lateral - Barrinha colapsável */
 .sidebar {
     width: 50px; /* Largura inicial (barrinha) */
@@ -427,10 +421,6 @@ header h1 {
         min-width: 100%;
     }
 
-    .container {
-        padding: 0;
-    }
-
     .table-container {
         min-width: 100%;
     }
@@ -519,16 +509,4 @@ header h1 {
     .delete-btn {
         width: 100%;
     }
-}
-
-@media (max-width: 600px) {
-    table {
-        display: block;
-        overflow-x: auto;
-        white-space: nowrap;
-    }
-}
-
-.modal-backdrop {
-    display: none !important;
 }

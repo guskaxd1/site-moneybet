@@ -9,8 +9,180 @@ let editDaysRemainingInput = null;
 let editIndicationInput = null;
 let cancelNameDisplay = null;
 let currentUserId = null;
+let isAuthenticated = false;
 
+<<<<<<< HEAD
 // Verificação de login e timer de redirecionamento
+=======
+// Funções globais para os botões de ação
+function openEditModal(userId, name, balance, expirationDate) {
+    console.log('Abrindo modal de edição:', { userId, name, balance, expirationDate });
+    if (!editModal || !editIdInput || !editNameInput || !editBalanceInput || !editExpirationInput || !editDaysRemainingInput || !editIndicationInput) {
+        console.error('Erro: Alguns elementos do modal de edição não foram encontrados');
+        return;
+    }
+    currentUserId = userId;
+    editIdInput.value = userId || '-';
+    editNameInput.value = name || '-';
+    editBalanceInput.value = (0).toFixed(2);
+
+    if (expirationDate) {
+        try {
+            const expDate = new Date(expirationDate);
+            if (isNaN(expDate.getTime())) {
+                console.warn('Data de expiração inválida ao abrir modal:', expirationDate);
+                editExpirationInput.value = '';
+                editDaysRemainingInput.value = '0 dias';
+            } else {
+                editExpirationInput.value = expDate.toISOString().split('T')[0];
+                updateDaysRemaining(expDate);
+            }
+        } catch (err) {
+            console.error('Erro ao parsear expirationDate no modal:', err.message, { expirationDate });
+            editExpirationInput.value = '';
+            editDaysRemainingInput.value = '0 dias';
+        }
+    } else {
+        editExpirationInput.value = '';
+        editDaysRemainingInput.value = '0 dias';
+    }
+
+    editIndicationInput.value = '';
+    console.log('Valor inicial de Indicação:', editIndicationInput.value);
+
+    $('#editModal').modal('show');
+    console.log('Modal de edição exibido');
+}
+
+function updateDaysRemaining(expirationDate) {
+    if (!editDaysRemainingInput) {
+        console.error('Erro: editDaysRemainingInput não encontrado');
+        return;
+    }
+    const currentDate = new Date();
+    const diffTime = new Date(expirationDate) - currentDate;
+    const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    editDaysRemainingInput.value = daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
+    console.log('Dias restantes calculados:', editDaysRemainingInput.value);
+}
+
+function calculateDaysRemaining(expirationDate) {
+    if (!expirationDate) return '0 dias';
+    try {
+        const expDate = new Date(expirationDate);
+        if (isNaN(expDate.getTime())) {
+            console.warn('Data de expiração inválida na tabela:', expirationDate);
+            return '0 dias';
+        }
+        const currentDate = new Date();
+        const diffTime = expDate - currentDate;
+        const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
+    } catch (err) {
+        console.error('Erro ao calcular dias restantes na tabela:', err.message, { expirationDate });
+        return '0 dias';
+    }
+}
+
+function openCancelModal(userId, name) {
+    console.log('Abrindo modal de cancelamento:', { userId, name });
+    if (!cancelModal || !cancelNameDisplay) {
+        console.error('Erro: Elementos do modal de cancelamento não foram encontrados');
+        return;
+    }
+    currentUserId = userId;
+    cancelNameDisplay.textContent = name || '-';
+    $('#cancelModal').modal('show');
+    console.log('Modal de cancelamento exibido');
+
+    const cancelSubscriptionBtn = document.querySelector('#cancelModal .delete-btn');
+    if (cancelSubscriptionBtn) {
+        const newCancelBtn = cancelSubscriptionBtn.cloneNode(true);
+        cancelSubscriptionBtn.parentNode.replaceChild(newCancelBtn, cancelSubscriptionBtn);
+        
+        newCancelBtn.addEventListener('click', () => {
+            console.log('Botão "Cancelar Assinatura" clicado para userId:', currentUserId);
+            if (!currentUserId) {
+                console.error('Erro: currentUserId não definido');
+                alert('Erro: ID do usuário não encontrado.');
+                return;
+            }
+            fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                mode: 'cors'
+            })
+            .then(response => {
+                console.log('Resposta do servidor ao cancelar assinatura:', { status: response.status, statusText: response.statusText });
+                if (!response.ok) {
+                    return response.json().then(data => { throw new Error(data.message || `Erro: ${response.status} - ${response.statusText}`); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Resposta do servidor:', data);
+                alert('Sucesso: Assinatura cancelada com sucesso!');
+                $('#cancelModal').modal('hide');
+                loadUsers();
+            })
+            .catch(error => {
+                console.error('Erro ao cancelar assinatura:', error.message);
+                alert(`Erro ao cancelar assinatura: ${error.message}`);
+            });
+        });
+        console.log('Evento de clique associado ao botão "Cancelar Assinatura"');
+    } else {
+        console.error('Erro: Botão "Cancelar Assinatura" não encontrado');
+    }
+
+    const deleteAllBtn = document.querySelector('#cancelModal .delete-all-btn');
+    if (deleteAllBtn) {
+        const newDeleteAllBtn = deleteAllBtn.cloneNode(true);
+        deleteAllBtn.parentNode.replaceChild(newDeleteAllBtn, deleteAllBtn);
+
+        newDeleteAllBtn.addEventListener('click', () => {
+            console.log('Botão "Excluir Todos os Dados" clicado para userId:', currentUserId);
+            if (!currentUserId) {
+                console.error('Erro: currentUserId não definido');
+                alert('Erro: ID do usuário não encontrado.');
+                return;
+            }
+            if (!confirm('Tem certeza que deseja excluir TODOS os dados deste usuário? Esta ação não pode ser desfeita.')) {
+                console.log('Exclusão cancelada pelo usuário');
+                return;
+            }
+            fetch(`https://site-moneybet.onrender.com/user/${currentUserId}/all`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                mode: 'cors'
+            })
+            .then(response => {
+                console.log('Resposta do servidor ao excluir todos os dados:', { status: response.status, statusText: response.statusText });
+                if (!response.ok) {
+                    return response.json().then(data => { throw new Error(data.message || `Erro: ${response.status} - ${response.statusText}`); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Resposta do servidor:', data);
+                alert('Sucesso: Todos os dados do usuário foram excluídos com sucesso!');
+                $('#cancelModal').modal('hide');
+                loadUsers();
+            })
+            .catch(error => {
+                console.error('Erro ao excluir todos os dados:', error.message);
+                alert(`Erro ao excluir todos os dados: ${error.message}`);
+            });
+        });
+        console.log('Evento de clique associado ao botão "Excluir Todos os Dados"');
+    } else {
+        console.error('Erro: Botão "Excluir Todos os Dados" não encontrado');
+    }
+}
+
+>>>>>>> 02d374c79963ef0d23a6990206dd01afbf27d6d6
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Verificando status de login...');
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
@@ -54,6 +226,65 @@ document.addEventListener('DOMContentLoaded', () => {
             tableBody, totalUsersEl, totalBalanceEl, activeSubscriptionsEl, expiredSubscriptionsEl, sidebar, menuToggle, searchContainer, searchInput, usersTable, logoutBtn, editModal, cancelModal, editIdInput, editNameInput, editBalanceInput, editExpirationInput, editDaysRemainingInput, editIndicationInput, cancelNameDisplay, loadingDiv, errorDiv
         });
         return;
+    }
+
+    function checkAuthentication() {
+        fetch('https://site-moneybet.onrender.com/check-auth', {
+            method: 'GET',
+            credentials: 'include',
+            mode: 'cors'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erro ao verificar autenticação');
+            }
+            return response.json();
+        })
+        .then(data => {
+            isAuthenticated = data.isAuthenticated;
+            console.log('Status de autenticação:', isAuthenticated);
+            if (!isAuthenticated) {
+                setTimeout(() => {
+                    if (!isAuthenticated) {
+                        console.log('Usuário não autenticado, redirecionando para login...');
+                        window.location.href = '/';
+                    }
+                }, 5000);
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao verificar autenticação:', error);
+            isAuthenticated = false;
+            setTimeout(() => {
+                if (!isAuthenticated) {
+                    console.log('Erro na autenticação, redirecionando para login...');
+                    window.location.href = '/';
+                }
+            }, 5000);
+        });
+    }
+
+    function handleLogout() {
+        console.log('Logout solicitado');
+        fetch('https://site-moneybet.onrender.com/logout', {
+            method: 'POST',
+            credentials: 'include',
+            mode: 'cors'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erro ao fazer logout');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Logout bem-sucedido:', data.message);
+            window.location.href = '/';
+        })
+        .catch(error => {
+            console.error('Erro ao fazer logout:', error.message);
+            alert('Erro ao fazer logout: ' + error.message);
+        });
     }
 
     menuToggle.addEventListener('click', () => {
@@ -487,6 +718,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Erro exibido:', message);
     }
 
+<<<<<<< HEAD
     function handleLogout() {
         console.log('Logout solicitado');
         localStorage.removeItem('isLoggedIn');
@@ -664,5 +896,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+=======
+    logoutBtn.addEventListener('click', handleLogout);
+
+    checkAuthentication();
+>>>>>>> 02d374c79963ef0d23a6990206dd01afbf27d6d6
     loadUsers();
 });

@@ -4,26 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MoneyBet</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FuuZM" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA==" crossorigin="anonymous" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="layout">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>MoneyBet</h2>
-            </div>
-            <nav class="sidebar-nav">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>MoneyBet</h2>
+        </div>
+        <div class="menu-toggle"><i class="fas fa-bars"></i></div>
+        <ul class="sidebar-nav">
+            <li class="nav-item">
+                <a href="#" class="nav-link active">PAINEL</a>
                 <ul>
-                    <li><h3>PAINEL</h3></li>
-                    <li><a href="#" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                    <li><h3>CONTROLES</h3></li>
-                    <li><a href="#"><i class="fas fa-users"></i> Usuários</a></li>
-                    <li><a href="#"><i class="fas fa-user-plus"></i> Usuários Registrados</a></li>
-                    <li><a href="#"><i class="fas fa-check-circle"></i> Usuários Ativos</a></li>
-                    <li><a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    <li><a href="#" class="nav-link">Dashboard</a></li>
                 </ul>
+<<<<<<< HEAD
             </nav>
         </aside>
         <main class="main-content">
@@ -80,17 +77,79 @@
                 </table>
             </div>
         </main>
+=======
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link">CONTROLES</a>
+                <ul>
+                    <li><a href="#" class="nav-link">Usuários</a></li>
+                    <li><a href="#" class="nav-link">Usuários Registrados</a></li>
+                    <li><a href="#" class="nav-link">Usuários Ativos</a></li>
+                    <li><a href="#" id="logout" class="nav-link">Logout</a></li>
+                </ul>
+            </li>
+        </ul>
+>>>>>>> 02d374c79963ef0d23a6990206dd01afbf27d6d6
     </div>
 
-    <!-- Modal Editar Usuário -->
-    <div class="modal fade" id="editModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="main-content">
+        <header>
+            <h1>Dashboard de Assinaturas</h1>
+            <button id="logoutBtn" class="logout-btn">Sair</button>
+        </header>
+        <div class="admin-panel">
+            <div class="panel-card">
+                <h3>Total de Usuários</h3>
+                <p id="total-users">0</p>
+            </div>
+            <div class="panel-card">
+                <h3>Saldo Total (R$)</h3>
+                <p id="total-balance">0.00</p>
+            </div>
+            <div class="panel-card">
+                <h3>Assinaturas Ativas</h3>
+                <p id="active-subscriptions">0</p>
+            </div>
+            <div class="panel-card">
+                <h3>Assinaturas Vencidas</h3>
+                <p id="expired-subscriptions">0</p>
+            </div>
+        </div>
+
+        <div id="search-container">
+            <input type="text" id="search-input" placeholder="Pesquisar por ID ou Nome..." class="form-control mb-3">
+        </div>
+
+        <div id="loading" style="display: none;">Carregando...</div>
+        <div id="error" style="display: none; color: red;"></div>
+
+        <div class="table-container">
+            <table id="usersTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>WhatsApp</th>
+                        <th>Data de Regist.</th>
+                        <th>Histórico de Pagam.</th>
+                        <th>Saldo</th>
+                        <th>Expiração</th>
+                        <th>Dias Restantes</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal de Edição -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Editar Usuário</h5>
-                    <button type="button" class="close" data-dismiss="modal">
-                        <span>×</span>
-                    </button>
+                    <h5 class="modal-title" id="editModalLabel">Editar Usuário</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="modal-field">
@@ -99,11 +158,11 @@
                     </div>
                     <div class="modal-field">
                         <label for="edit-name">Nome</label>
-                        <input type="text" class="form-control" id="edit-name">
+                        <input type="text" class="form-control" id="edit-name" required>
                     </div>
                     <div class="modal-field">
                         <label for="edit-balance">Saldo</label>
-                        <input type="number" class="form-control" id="edit-balance" step="0.01">
+                        <input type="text" class="form-control" id="edit-balance" readonly>
                     </div>
                     <div class="modal-field">
                         <label for="edit-expiration">Data de Expiração</label>
@@ -115,39 +174,37 @@
                     </div>
                     <div class="modal-field">
                         <label for="edit-indication">Indicação</label>
-                        <select id="edit-indication" class="form-control">
-                            <option value="" selected disabled>Selecione</option>
+                        <select class="form-control" id="edit-indication">
+                            <option value="">Selecione</option>
                             <option value="Soneca">Soneca</option>
                         </select>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-primary save-btn">Salvar Alterações</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Cancelar Assinatura -->
-    <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered" role="document">
+    <!-- Modal de Cancelamento -->
+    <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Cancelar Assinatura</h5>
-                    <button type="button" class="close" data-dismiss="modal">
-                        <span>×</span>
-                    </button>
+                    <h5 class="modal-title" id="cancelModalLabel">Cancelar Assinatura</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body text-center">
-                    <p class="confirmation-text mb-4">Tem certeza que deseja cancelar a assinatura de <strong id="cancel-name"></strong>?</p>
+                <div class="modal-body">
+                    <p class="confirmation-text">Tem certeza que deseja cancelar a assinatura de <span id="cancel-name"></span>?</p>
                     <div class="delete-user-box">
-                        <h4 class="delete-title mb-2">Excluir Usuário Totalmente</h4>
+                        <p class="delete-title">Excluir Usuário Totalmente</p>
                         <p class="delete-warning">Esta ação irá remover permanentemente todos os dados deste usuário (assinatura, saldo, histórico, etc.) do sistema. Confirme com cuidado.</p>
                     </div>
                 </div>
-                <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Não</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Não</button>
                     <button type="button" class="btn btn-danger delete-btn">Cancelar Assinatura</button>
                     <button type="button" class="btn btn-danger delete-all-btn">Excluir Todos os Dados</button>
                 </div>
@@ -155,9 +212,21 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Scripts com fallback -->
+    <script>
+        // Fallback para jQuery
+        if (!window.jQuery) {
+            document.write('<script src="/jquery-3.6.0.min.js"><\/script>');
+        }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script>
+        // Fallback para Bootstrap
+        if (typeof bootstrap === 'undefined') {
+            document.write('<script src="/bootstrap.bundle.min.js"><\/script>');
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <script src="script.js"></script>
 </body>
 </html>
