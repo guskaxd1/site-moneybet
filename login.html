@@ -3,22 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Login - MoneyBet</title>
+    <link rel="icon" type="image/x-icon" href="img/favicon.ico"> <!-- Adiciona o favicon -->
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-    <div class="container">
+<body class="login-body">
+    <div class="login-container">
+        <img src="img/moneybet.jpeg" alt="MoneyBet Logo" class="login-logo">
         <h1>Login</h1>
         <form id="loginForm">
-            <div>
+            <div class="login-field">
                 <label for="username">Usuário:</label>
                 <input type="text" id="username" required>
             </div>
-            <div>
+            <div class="login-field">
                 <label for="password">Senha:</label>
                 <input type="password" id="password" required>
             </div>
-            <button type="submit">Entrar</button>
+            <button type="submit" class="login-btn">Entrar</button>
         </form>
     </div>
 
@@ -26,10 +28,21 @@
         document.getElementById('loginForm').addEventListener('submit', (e) => {
             e.preventDefault();
             console.log('Formulário de login enviado');
-            // Simula login bem-sucedido
-            localStorage.setItem('isLoggedIn', 'true');
-            console.log('isLoggedIn definido como true no localStorage');
-            window.location.href = '/index.html';
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            const validUsername = 'adm1';
+            const validPassword = 'Bueno00';
+
+            if (username === validUsername && password === validPassword) {
+                console.log('Credenciais válidas. Definindo isLoggedIn como true no localStorage');
+                localStorage.setItem('isLoggedIn', 'true');
+                window.location.href = '/index.html';
+            } else {
+                console.log('Credenciais inválidas:', { username, password });
+                alert('Erro: Usuário ou senha inválidos.');
+            }
         });
     </script>
 </body>

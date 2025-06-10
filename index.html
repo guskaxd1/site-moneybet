@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MoneyBet</title>
+    <link rel="icon" type="image/x-icon" href="img/favicon.ico"> <!-- Adiciona o favicon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="styles.css">
@@ -12,56 +13,50 @@
     <div class="layout">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2>MoneyBet</h2>
+                <h2>PAINEL</h2>
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li><h3>PAINEL</h3></li>
                     <li><a href="#" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                    <li><h3>CONTROLES</h3></li>
+                    <h3>CONTROLES</h3>
                     <li><a href="#"><i class="fas fa-users"></i> Usuários</a></li>
-                    <li><a href="#"><i class="fas fa-user-plus"></i> Usuários Registrados</a></li>
-                    <li><a href="#"><i class="fas fa-check-circle"></i> Usuários Ativos</a></li>
+                    <li><a href="#"><i class="fas fa-user-check"></i> Usuários Registrados</a></li>
+                    <li><a href="#"><i class="fas fa-user-shield"></i> Usuários Ativos</a></li>
                     <li><a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </nav>
         </aside>
         <main class="main-content">
             <header>
-                <button class="menu-toggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <h1>Dashboard de Assinaturas</h1>
+                <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+                <div class="header-title">
+                    <img src="https://via.placeholder.com/150x50?text=MoneyBet+Logo" alt="MoneyBet Logo" class="header-logo">
+                    <h1>MoneyBet</h1>
+                </div>
                 <button class="logout-btn" id="logoutBtn">Sair</button>
             </header>
-            <div class="container">
-                <div class="admin-panel">
-                    <div class="panel-card">
-                        <h3>Total de Usuários</h3>
-                        <p id="total-users">0</p>
-                    </div>
-                    <div class="panel-card">
-                        <h3>Saldo Total (R$)</h3>
-                        <p id="total-balance">0.00</p>
-                    </div>
-                    <div class="panel-card">
-                        <h3>Assinaturas Ativas</h3>
-                        <p id="active-subscriptions">0</p>
-                    </div>
-                    <div class="panel-card">
-                        <h3>Assinaturas Vencidas</h3>
-                        <p id="expired-subscriptions">0</p>
-                    </div>
+            <section class="admin-panel">
+                <div class="panel-card">
+                    <h3>Total de Usuários</h3>
+                    <p id="total-users">0</p>
                 </div>
-                <div id="search-container" style="display: none; margin-bottom: 20px;">
-                    <input type="text" id="search-input" placeholder="🔎Pesquisar por ID ou Nome" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <div class="panel-card">
+                    <h3>Saldo Total (R$)</h3>
+                    <p id="total-balance">0.00</p>
                 </div>
-                <div id="loading" style="display: none;">
-                    <div class="spinner-border" role="status">
-                        <span class="sr-only">Carregando...</span>
-                    </div>
+                <div class="panel-card">
+                    <h3>Assinaturas Ativas</h3>
+                    <p id="active-subscriptions">0</p>
                 </div>
-                <div id="error" class="alert alert-danger" style="display: none;"></div>
+                <div class="panel-card">
+                    <h3>Assinaturas Vencidas</h3>
+                    <p id="expired-subscriptions">0</p>
+                </div>
+            </section>
+            <div id="search-container" style="display: none;">
+                <input type="text" id="search-input" placeholder="Pesquisar por ID ou Nome...">
+            </div>
+            <div class="table-container">
                 <table id="usersTable" style="display: none;">
                     <thead>
                         <tr>
@@ -69,54 +64,55 @@
                             <th>Nome</th>
                             <th>WhatsApp</th>
                             <th>Data Registro</th>
-                            <th>Data Pagamemtos</th>
+                            <th>Data Pagamentos</th>
                             <th>Saldo</th>
                             <th>Expiração</th>
                             <th>Dias Restan.</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
-                    <tbody id="usersTableBody"></tbody>
+                    <tbody id="usersTableBody">
+                        <tr><td colspan="9">Carregando...</td></tr>
+                    </tbody>
                 </table>
             </div>
         </main>
     </div>
 
-    <!-- Modal Editar Usuário -->
     <div class="modal fade" id="editModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Editar Usuário</h5>
-                    <button type="button" class="close" data-dismiss="modal">
-                        <span>×</span>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
                     </button>
                 </div>
                 <div class="modal-body">
                     <div class="modal-field">
-                        <label for="edit-id">ID Discord</label>
-                        <input type="text" class="form-control" id="edit-id" readonly>
+                        <label>ID Discord</label>
+                        <p id="edit-id">-</p>
                     </div>
                     <div class="modal-field">
-                        <label for="edit-name">Nome</label>
-                        <input type="text" class="form-control" id="edit-name">
+                        <label>Nome</label>
+                        <input type="text" id="edit-name">
                     </div>
                     <div class="modal-field">
-                        <label for="edit-balance">Saldo</label>
-                        <input type="number" class="form-control" id="edit-balance" step="0.01">
+                        <label>Saldo</label>
+                        <input type="number" id="edit-balance" step="0.01" min="0">
                     </div>
                     <div class="modal-field">
-                        <label for="edit-expiration">Data de Expiração</label>
-                        <input type="date" class="form-control" id="edit-expiration">
+                        <label>Data de Expiração</label>
+                        <input type="date" id="edit-expiration">
                     </div>
                     <div class="modal-field">
-                        <label for="edit-days-remaining">Dias Restantes</label>
-                        <input type="text" class="form-control" id="edit-days-remaining" readonly>
+                        <label>Dias Restantes</label>
+                        <input type="text" id="edit-days-remaining" readonly>
                     </div>
                     <div class="modal-field">
-                        <label for="edit-indication">Indicação</label>
-                        <select id="edit-indication" class="form-control">
-                            <option value="" selected disabled>Selecione</option>
+                        <label>Indicação</label>
+                        <select id="edit-indication">
+                            <option value="">Selecione</option>
                             <option value="Soneca">Soneca</option>
                         </select>
                     </div>
@@ -129,24 +125,23 @@
         </div>
     </div>
 
-    <!-- Modal Cancelar Assinatura -->
     <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Cancelar Assinatura</h5>
-                    <button type="button" class="close" data-dismiss="modal">
-                        <span>×</span>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
                     </button>
                 </div>
-                <div class="modal-body text-center">
-                    <p class="confirmation-text mb-4">Tem certeza que deseja cancelar a assinatura de <strong id="cancel-name"></strong>?</p>
+                <div class="modal-body">
+                    <p class="confirmation-text">Tem certeza que deseja cancelar a assinatura de <strong id="cancel-name">-</strong>?</p>
                     <div class="delete-user-box">
-                        <h4 class="delete-title mb-2">Excluir Usuário Totalmente</h4>
+                        <p class="delete-title">Excluir Usuário Totalmente</p>
                         <p class="delete-warning">Esta ação irá remover permanentemente todos os dados deste usuário (assinatura, saldo, histórico, etc.) do sistema. Confirme com cuidado.</p>
                     </div>
                 </div>
-                <div class="modal-footer justify-content-center">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Não</button>
                     <button type="button" class="btn btn-danger delete-btn">Cancelar Assinatura</button>
                     <button type="button" class="btn btn-danger delete-all-btn">Excluir Todos os Dados</button>
@@ -155,8 +150,8 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="script.js"></script>
 </body>

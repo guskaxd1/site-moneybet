@@ -15,11 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Verificando status de login...');
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
     if (!isLoggedIn) {
-        console.log('Usuário não está logado. Iniciando timer de 5 segundos para redirecionamento.');
+        console.log('Usuário não está logado. Iniciando timer de 1 segundo para redirecionamento.');
         setTimeout(() => {
             console.log('Timer expirado. Redirecionando para login.html');
             window.location.href = '/login.html';
-        }, 5000); // 5 segundos
+        }, 1000); // 1 segundo1
     } else {
         console.log('Usuário está logado. Acesso permitido.');
     }
