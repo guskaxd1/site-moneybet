@@ -6,183 +6,25 @@ let editNameInput = null;
 let editBalanceInput = null;
 let editExpirationInput = null;
 let editDaysRemainingInput = null;
-let editIndicationInput = null; // Campo para Indicação
+let editIndicationInput = null;
 let cancelNameDisplay = null;
 let currentUserId = null;
 
-// Funções globais para os botões de ação
-function openEditModal(userId, name, balance, expirationDate) {
-    console.log('Abrindo modal de edição:', { userId, name, balance, expirationDate });
-    if (!editModal || !editIdInput || !editNameInput || !editBalanceInput || !editExpirationInput || !editDaysRemainingInput || !editIndicationInput) {
-        console.error('Erro: Alguns elementos do modal de edição não foram encontrados');
-        return;
-    }
-    currentUserId = userId;
-    editIdInput.value = userId || '-';
-    editNameInput.value = name || '-';
-    editBalanceInput.value = (0).toFixed(2); // Sempre zerado
-    
-    if (expirationDate) {
-        try {
-            const expDate = new Date(expirationDate);
-            if (isNaN(expDate.getTime())) {
-                console.warn('Data de expiração inválida ao abrir modal:', expirationDate);
-                editExpirationInput.value = '';
-                editDaysRemainingInput.value = '0 dias';
-            } else {
-                editExpirationInput.value = expDate.toISOString().split('T')[0];
-                updateDaysRemaining(expDate);
-            }
-        } catch (err) {
-            console.error('Erro ao parsear expirationDate no modal:', err.message, { expirationDate });
-            editExpirationInput.value = '';
-            editDaysRemainingInput.value = '0 dias';
-        }
-    } else {
-        editExpirationInput.value = '';
-        editDaysRemainingInput.value = '0 dias';
-    }
-
-    // Configurar o campo Indicação como vazio por padrão
-    editIndicationInput.value = ''; // Define como vazio inicialmente
-    console.log('Valor inicial de Indicação:', editIndicationInput.value);
-
-    $('#editModal').modal('show');
-    console.log('Modal de edição exibido');
-}
-
-function updateDaysRemaining(expirationDate) {
-    if (!editDaysRemainingInput) {
-        console.error('Erro: editDaysRemainingInput não encontrado');
-        return;
-    }
-    const currentDate = new Date();
-    const diffTime = new Date(expirationDate) - currentDate;
-    const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    editDaysRemainingInput.value = daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
-    console.log('Dias restantes calculados:', editDaysRemainingInput.value);
-}
-
-// Função para calcular dias restantes para a tabela
-function calculateDaysRemaining(expirationDate) {
-    if (!expirationDate) return '0 dias';
-    try {
-        const expDate = new Date(expirationDate);
-        if (isNaN(expDate.getTime())) {
-            console.warn('Data de expiração inválida na tabela:', expirationDate);
-            return '0 dias';
-        }
-        const currentDate = new Date();
-        const diffTime = expDate - currentDate;
-        const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
-    } catch (err) {
-        console.error('Erro ao calcular dias restantes na tabela:', err.message, { expirationDate });
-        return '0 dias';
-    }
-}
-
-function openCancelModal(userId, name) {
-    console.log('Abrindo modal de cancelamento:', { userId, name });
-    if (!cancelModal || !cancelNameDisplay) {
-        console.error('Erro: Elementos do modal de cancelamento não foram encontrados');
-        return;
-    }
-    currentUserId = userId;
-    cancelNameDisplay.textContent = name || '-';
-    $('#cancelModal').modal('show');
-    console.log('Modal de cancelamento exibido');
-
-    const cancelSubscriptionBtn = document.querySelector('#cancelModal .delete-btn');
-    if (cancelSubscriptionBtn) {
-        const newCancelBtn = cancelSubscriptionBtn.cloneNode(true);
-        cancelSubscriptionBtn.parentNode.replaceChild(newCancelBtn, cancelSubscriptionBtn);
-        
-        newCancelBtn.addEventListener('click', () => {
-            console.log('Botão "Cancelar Assinatura" clicado para userId:', currentUserId);
-            if (!currentUserId) {
-                console.error('Erro: currentUserId não definido');
-                alert('Erro: ID do usuário não encontrado.');
-                return;
-            }
-            fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                mode: 'cors'
-            })
-            .then(response => {
-                console.log('Resposta do servidor ao cancelar assinatura:', { status: response.status, statusText: response.statusText });
-                if (!response.ok) {
-                    return response.json().then(data => { throw new Error(data.message || `Erro: ${response.status} - ${response.statusText}`); });
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Resposta do servidor:', data);
-                alert('Sucesso: Assinatura cancelada com sucesso!');
-                $('#cancelModal').modal('hide');
-                loadUsers();
-            })
-            .catch(error => {
-                console.error('Erro ao cancelar assinatura:', error.message);
-                alert(`Erro ao cancelar assinatura: ${error.message}`);
-            });
-        });
-        console.log('Evento de clique associado ao botão "Cancelar Assinatura"');
-    } else {
-        console.error('Erro: Botão "Cancelar Assinatura" não encontrado');
-    }
-
-    const deleteAllBtn = document.querySelector('#cancelModal .delete-all-btn');
-    if (deleteAllBtn) {
-        const newDeleteAllBtn = deleteAllBtn.cloneNode(true);
-        deleteAllBtn.parentNode.replaceChild(newDeleteAllBtn, deleteAllBtn);
-
-        newDeleteAllBtn.addEventListener('click', () => {
-            console.log('Botão "Excluir Todos os Dados" clicado para userId:', currentUserId);
-            if (!currentUserId) {
-                console.error('Erro: currentUserId não definido');
-                alert('Erro: ID do usuário não encontrado.');
-                return;
-            }
-            if (!confirm('Tem certeza que deseja excluir TODOS os dados deste usuário? Esta ação não pode ser desfeita.')) {
-                console.log('Exclusão cancelada pelo usuário');
-                return;
-            }
-            fetch(`https://site-moneybet.onrender.com/user/${currentUserId}/all`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                mode: 'cors'
-            })
-            .then(response => {
-                console.log('Resposta do servidor ao excluir todos os dados:', { status: response.status, statusText: response.statusText });
-                if (!response.ok) {
-                    return response.json().then(data => { throw new Error(data.message || `Erro: ${response.status} - ${response.statusText}`); });
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Resposta do servidor:', data);
-                alert('Sucesso: Todos os dados do usuário foram excluídos com sucesso!');
-                $('#cancelModal').modal('hide');
-                loadUsers();
-            })
-            .catch(error => {
-                console.error('Erro ao excluir todos os dados:', error.message);
-                alert(`Erro ao excluir todos os dados: ${error.message}`);
-            });
-        });
-        console.log('Evento de clique associado ao botão "Excluir Todos os Dados"');
-    } else {
-        console.error('Erro: Botão "Excluir Todos os Dados" não encontrado');
-    }
-}
-
+// Verificação de login e timer de redirecionamento
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Script iniciado: Carregando dados...');
+    console.log('Verificando status de login...');
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) {
+        console.log('Usuário não está logado. Iniciando timer de 5 segundos para redirecionamento.');
+        setTimeout(() => {
+            console.log('Timer expirado. Redirecionando para login.html');
+            window.location.href = '/login.html';
+        }, 5000); // 5 segundos
+    } else {
+        console.log('Usuário está logado. Acesso permitido.');
+    }
 
+    // Restante do código existente
     const tableBody = document.getElementById('usersTableBody');
     const totalUsersEl = document.getElementById('total-users');
     const totalBalanceEl = document.getElementById('total-balance');
@@ -201,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     editBalanceInput = document.getElementById('edit-balance');
     editExpirationInput = document.getElementById('edit-expiration');
     editDaysRemainingInput = document.getElementById('edit-days-remaining');
-    editIndicationInput = document.getElementById('edit-indication'); // Campo para Indicação
+    editIndicationInput = document.getElementById('edit-indication');
     cancelNameDisplay = document.getElementById('cancel-name');
     const loadingDiv = document.getElementById('loading');
     const errorDiv = document.getElementById('error');
@@ -319,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
         })
         .then(data => {
-            console.log('Dados brutos recebidos:', JSON.stringify(data, null, 2)); // Log detalhado
+            console.log('Dados brutos recebidos:', JSON.stringify(data, null, 2));
             hideLoading();
             if (!data || !data.users || data.users.length === 0) {
                 console.warn('Nenhum usuário encontrado ou dados inválidos:', data);
@@ -491,10 +333,9 @@ document.addEventListener('DOMContentLoaded', () => {
         tableBody.innerHTML = '';
         users.forEach(user => {
             const row = document.createElement('tr');
-            const balanceValue = 0; // Sempre zerado
+            const balanceValue = 0;
             const registeredAt = user.registeredAt ? new Date(user.registeredAt) : null;
             const expirationDate = user.expirationDate ? new Date(user.expirationDate) : null;
-            // Formatar data com os dois últimos dígitos do ano
             const formatDate = (date) => {
                 if (!date || isNaN(date.getTime())) return '-';
                 const day = String(date.getDate()).padStart(2, '0');
@@ -505,11 +346,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const registeredValue = registeredAt ? formatDate(registeredAt) : '-';
             const expirationValue = expirationDate ? formatDate(expirationDate) : '-';
             const daysRemaining = calculateDaysRemaining(user.expirationDate);
-            // Decodificar userId e name para corrigir caracteres codificados
             const decodedUserId = decodeURIComponent(user.userId || '-');
             const decodedName = decodeURIComponent(user.name || '-');
-            // Adicionar classe 'indicated-user' se o usuário tiver indicação "Soneca"
-            const isIndicated = user.indication === 'Soneca'; // Verifica se a indicação é "Soneca"
+            const isIndicated = user.indication === 'Soneca';
             row.innerHTML = `
                 <td>${decodedUserId}</td>
                 <td>${decodedName}</td>
@@ -539,7 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const query = searchInput.value.toLowerCase();
         const filteredUsers = allUsers.filter(user => 
             (user.userId && user.userId.toLowerCase().includes(query)) ||
-            (user.name && name.toLowerCase().includes(query))
+            (user.name && user.name.toLowerCase().includes(query))
         );
         populateUserTable(filteredUsers);
         console.log('Usuários filtrados:', filteredUsers.length);
@@ -562,9 +401,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (saveBtn) {
         saveBtn.addEventListener('click', () => {
             const name = editNameInput.value.trim();
-            const balance = 0; // Sempre zerado
+            const balance = 0;
             let expirationDate = null;
-            const indication = editIndicationInput.value; // Valor do campo Indicação
+            const indication = editIndicationInput.value;
 
             if (editExpirationInput.value) {
                 try {
@@ -588,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const requestBody = { name, balance: 0, expirationDate, indication }; // Inclui o campo Indicação
+            const requestBody = { name, balance: 0, expirationDate, indication };
             console.log('Enviando atualização para o servidor:', { userId: currentUserId, requestBody });
             fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
                 method: 'PUT',
@@ -615,7 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.error) throw new Error(data.error);
                 alert('Sucesso: Dados atualizados!');
                 $('#editModal').modal('hide');
-                loadUsers(); // Força recarga da tabela
+                loadUsers();
             })
             .catch(error => {
                 console.error('Erro ao salvar:', error);
@@ -649,11 +488,181 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleLogout() {
-        console.log('Logout solicitado (desativado temporariamente)');
-        window.location.href = '/';
+        console.log('Logout solicitado');
+        localStorage.removeItem('isLoggedIn');
+        console.log('isLoggedIn removido do localStorage');
+        window.location.href = '/login.html';
     }
 
     logoutBtn.addEventListener('click', handleLogout);
+
+    // Funções globais para os botões de ação
+    function openEditModal(userId, name, balance, expirationDate) {
+        console.log('Abrindo modal de edição:', { userId, name, balance, expirationDate });
+        if (!editModal || !editIdInput || !editNameInput || !editBalanceInput || !editExpirationInput || !editDaysRemainingInput || !editIndicationInput) {
+            console.error('Erro: Alguns elementos do modal de edição não foram encontrados');
+            return;
+        }
+        currentUserId = userId;
+        editIdInput.value = userId || '-';
+        editNameInput.value = name || '-';
+        editBalanceInput.value = (0).toFixed(2);
+        
+        if (expirationDate) {
+            try {
+                const expDate = new Date(expirationDate);
+                if (isNaN(expDate.getTime())) {
+                    console.warn('Data de expiração inválida ao abrir modal:', expirationDate);
+                    editExpirationInput.value = '';
+                    editDaysRemainingInput.value = '0 dias';
+                } else {
+                    editExpirationInput.value = expDate.toISOString().split('T')[0];
+                    updateDaysRemaining(expDate);
+                }
+            } catch (err) {
+                console.error('Erro ao parsear expirationDate no modal:', err.message, { expirationDate });
+                editExpirationInput.value = '';
+                editDaysRemainingInput.value = '0 dias';
+            }
+        } else {
+            editExpirationInput.value = '';
+            editDaysRemainingInput.value = '0 dias';
+        }
+
+        editIndicationInput.value = '';
+        console.log('Valor inicial de Indicação:', editIndicationInput.value);
+
+        $('#editModal').modal('show');
+        console.log('Modal de edição exibido');
+    }
+
+    function updateDaysRemaining(expirationDate) {
+        if (!editDaysRemainingInput) {
+            console.error('Erro: editDaysRemainingInput não encontrado');
+            return;
+        }
+        const currentDate = new Date();
+        const diffTime = new Date(expirationDate) - currentDate;
+        const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        editDaysRemainingInput.value = daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
+        console.log('Dias restantes calculados:', editDaysRemainingInput.value);
+    }
+
+    function calculateDaysRemaining(expirationDate) {
+        if (!expirationDate) return '0 dias';
+        try {
+            const expDate = new Date(expirationDate);
+            if (isNaN(expDate.getTime())) {
+                console.warn('Data de expiração inválida na tabela:', expirationDate);
+                return '0 dias';
+            }
+            const currentDate = new Date();
+            const diffTime = expDate - currentDate;
+            const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
+        } catch (err) {
+            console.error('Erro ao calcular dias restantes na tabela:', err.message, { expirationDate });
+            return '0 dias';
+        }
+    }
+
+    function openCancelModal(userId, name) {
+        console.log('Abrindo modal de cancelamento:', { userId, name });
+        if (!cancelModal || !cancelNameDisplay) {
+            console.error('Erro: Elementos do modal de cancelamento não foram encontrados');
+            return;
+        }
+        currentUserId = userId;
+        cancelNameDisplay.textContent = name || '-';
+        $('#cancelModal').modal('show');
+        console.log('Modal de cancelamento exibido');
+
+        const cancelSubscriptionBtn = document.querySelector('#cancelModal .delete-btn');
+        if (cancelSubscriptionBtn) {
+            const newCancelBtn = cancelSubscriptionBtn.cloneNode(true);
+            cancelSubscriptionBtn.parentNode.replaceChild(newCancelBtn, cancelSubscriptionBtn);
+            
+            newCancelBtn.addEventListener('click', () => {
+                console.log('Botão "Cancelar Assinatura" clicado para userId:', currentUserId);
+                if (!currentUserId) {
+                    console.error('Erro: currentUserId não definido');
+                    alert('Erro: ID do usuário não encontrado.');
+                    return;
+                }
+                fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    mode: 'cors'
+                })
+                .then(response => {
+                    console.log('Resposta do servidor ao cancelar assinatura:', { status: response.status, statusText: response.statusText });
+                    if (!response.ok) {
+                        return response.json().then(data => { throw new Error(data.message || `Erro: ${response.status} - ${response.statusText}`); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Resposta do servidor:', data);
+                    alert('Sucesso: Assinatura cancelada com sucesso!');
+                    $('#cancelModal').modal('hide');
+                    loadUsers();
+                })
+                .catch(error => {
+                    console.error('Erro ao cancelar assinatura:', error.message);
+                    alert(`Erro ao cancelar assinatura: ${error.message}`);
+                });
+            });
+            console.log('Evento de clique associado ao botão "Cancelar Assinatura"');
+        } else {
+            console.error('Erro: Botão "Cancelar Assinatura" não encontrado');
+        }
+
+        const deleteAllBtn = document.querySelector('#cancelModal .delete-all-btn');
+        if (deleteAllBtn) {
+            const newDeleteAllBtn = deleteAllBtn.cloneNode(true);
+            deleteAllBtn.parentNode.replaceChild(newDeleteAllBtn, deleteAllBtn);
+
+            newDeleteAllBtn.addEventListener('click', () => {
+                console.log('Botão "Excluir Todos os Dados" clicado para userId:', currentUserId);
+                if (!currentUserId) {
+                    console.error('Erro: currentUserId não definido');
+                    alert('Erro: ID do usuário não encontrado.');
+                    return;
+                }
+                if (!confirm('Tem certeza que deseja excluir TODOS os dados deste usuário? Esta ação não pode ser desfeita.')) {
+                    console.log('Exclusão cancelada pelo usuário');
+                    return;
+                }
+                fetch(`https://site-moneybet.onrender.com/user/${currentUserId}/all`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    mode: 'cors'
+                })
+                .then(response => {
+                    console.log('Resposta do servidor ao excluir todos os dados:', { status: response.status, statusText: response.statusText });
+                    if (!response.ok) {
+                        return response.json().then(data => { throw new Error(data.message || `Erro: ${response.status} - ${response.statusText}`); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Resposta do servidor:', data);
+                    alert('Sucesso: Todos os dados do usuário foram excluídos com sucesso!');
+                    $('#cancelModal').modal('hide');
+                    loadUsers();
+                })
+                .catch(error => {
+                    console.error('Erro ao excluir todos os dados:', error.message);
+                    alert(`Erro ao excluir todos os dados: ${error.message}`);
+                });
+            });
+            console.log('Evento de clique associado ao botão "Excluir Todos os Dados"');
+        } else {
+            console.error('Erro: Botão "Excluir Todos os Dados" não encontrado');
+        }
+    }
 
     loadUsers();
 });
