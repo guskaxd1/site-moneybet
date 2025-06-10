@@ -8,7 +8,7 @@
 
 /* Estilo para a página de login */
 .login-body {
-    background: linear-gradient(135deg, #2c3e50, #3498db);
+    background: linear-gradient(135deg, #1e2b38, #163142);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -19,7 +19,7 @@
 .login-container {
     max-width: 400px;
     width: 90%;
-    background: #fff;
+    background: #1a1919;
     padding: 30px;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
@@ -298,7 +298,7 @@ header h1 {
 
 #usersTable th,
 #usersTable td {
-    padding: 6px;
+    padding: 8px;
     text-align: center;
     border-bottom: 1px solid #ddd;
     word-break: break-all;
@@ -309,11 +309,11 @@ header h1 {
 
 #usersTable th:nth-child(5),
 #usersTable td:nth-child(5) {
-    max-width: 200px; /* Aumenta a largura máxima para acomodar mais texto */
+    max-width: 250px; /* Aumentado para acomodar mais texto */
     white-space: nowrap; /* Evita quebras de linha automáticas */
-    overflow: hidden; /* Oculta o texto que exceder */
-    text-overflow: ellipsis; /* Adiciona "..." quando o texto é cortado */
-    padding: 4px; /* Reduz o padding para economizar espaço */
+    overflow: hidden; /* Oculta texto excedente */
+    text-overflow: ellipsis; /* Adiciona "..." quando cortado */
+    padding: 6px; /* Ajuste de padding para melhor legibilidade */
 }
 
 #usersTable th {
@@ -339,16 +339,16 @@ header h1 {
 
 /* Botões de ação */
 .action-btn {
-    padding: 4px 6px;
+    padding: 6px 8px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 10px;
+    font-size: 12px;
     display: inline-flex;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
     transition: transform 0.2s ease, background-color 0.3s ease, box-shadow 0.2s ease;
-    margin-right: 2px;
+    margin-right: 4px;
 }
 
 .edit-btn {
@@ -557,13 +557,11 @@ header h1 {
 
     #usersTable th:nth-child(5),
     #usersTable td:nth-child(5) {
-        max-width: 150px; /* Ajuste para telas menores */
+        max-width: 180px; /* Ajuste para telas menores */
     }
 
     #usersTable th:nth-child(3),
     #usersTable td:nth-child(3),
-    #usersTable th:nth-child(5),
-    #usersTable td:nth-child(5),
     #usersTable th:nth-child(6),
     #usersTable td:nth-child(6) {
         display: none;
@@ -623,13 +621,11 @@ header h1 {
 
     #usersTable th:nth-child(5),
     #usersTable td:nth-child(5) {
-        max-width: 120px; /* Ajuste para telas muito pequenas */
+        max-width: 140px; /* Ajuste para telas muito pequenas */
     }
 
     #usersTable th:nth-child(3),
     #usersTable td:nth-child(3),
-    #usersTable th:nth-child(5),
-    #usersTable td:nth-child(5),
     #usersTable th:nth-child(6),
     #usersTable td:nth-child(6) {
         display: none;
