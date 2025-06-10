@@ -19,6 +19,7 @@
 .login-container {
     max-width: 400px;
     width: 90%;
+    margin-top: -112px;
     background: #070707; /* Alterado para preto, cor da logo */
     padding: 30px;
     border-radius: 12px;
@@ -70,15 +71,14 @@
 
 .login-field input:focus {
     outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+    border-color: #000000;
+    box-shadow: 0 0 5px rgba(56, 56, 56, 0.3);
 }
 
 .login-btn {
     width: 100%;
     padding: 12px;
     background: linear-gradient(90deg, #161507, #927804);
-    color: #fff;
     border: none;
     border-radius: 6px;
     font-size: 16px;
