@@ -10,30 +10,21 @@ let editIndicationInput = null;
 let cancelNameDisplay = null;
 let currentUserId = null;
 
-// Verificação de login e inicialização
+// Verificação de login e timer de redirecionamento
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Verificando status de login...');
-    fetch('https://site-moneybet.onrender.com/check-auth', {
-        credentials: 'include',
-        mode: 'cors'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (!data.isAuthenticated) {
-            console.log('Usuário não está logado. Redirecionando para login.html');
-            setTimeout(() => window.location.href = '/login.html', 1000);
-        } else {
-            console.log('Usuário está logado. Acesso permitido.');
-            initializeApp();
-        }
-    })
-    .catch(error => {
-        console.error('Erro ao verificar autenticação:', error);
-        window.location.href = '/login.html';
-    });
-});
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) {
+        console.log('Usuário não está logado. Iniciando timer de 1 segundo para redirecionamento.');
+        setTimeout(() => {
+            console.log('Timer expirado. Redirecionando para login.html');
+            window.location.href = '/login.html';
+        }, 1000); // 1 segundo1
+    } else {
+        console.log('Usuário está logado. Acesso permitido.');
+    }
 
-function initializeApp() {
+    // Restante do código existente
     const tableBody = document.getElementById('usersTableBody');
     const totalUsersEl = document.getElementById('total-users');
     const totalBalanceEl = document.getElementById('total-balance');
@@ -139,7 +130,7 @@ function initializeApp() {
             console.error('Erro ao carregar Dashboard:', error);
             updateDashboardStats([]);
             showError(`Erro ao carregar dados: ${error.message}`);
-            alert(`Erro ao carregar dados. Detalhes: ${error.message}`);
+            alert(`Erro ao carregar dados: ${error.message}`);
         });
     }
 
@@ -189,7 +180,7 @@ function initializeApp() {
             tableBody.innerHTML = `<tr><td colspan="9">Erro: ${error.message}</td></tr>`;
             updateDashboardStats([]);
             showError(`Erro ao carregar usuários: ${error.message}`);
-            alert(`Erro ao carregar usuários. Detalhes: ${error.message}`);
+            alert(`Erro ao carregar usuários: ${error.message}`);
         });
     }
 
@@ -248,7 +239,7 @@ function initializeApp() {
             tableBody.innerHTML = `<tr><td colspan="9">Erro: ${error.message}</td></tr>`;
             updateDashboardStats([]);
             showError(`Erro ao carregar usuários registrados: ${error.message}`);
-            alert(`Erro ao carregar usuários registrados. Detalhes: ${error.message}`);
+            alert(`Erro ao carregar usuários registrados: ${error.message}`);
         });
     }
 
@@ -307,7 +298,7 @@ function initializeApp() {
             tableBody.innerHTML = `<tr><td colspan="9">Erro: ${error.message}</td></tr>`;
             updateDashboardStats([]);
             showError(`Erro ao carregar usuários ativos: ${error.message}`);
-            alert(`Erro ao carregar usuários ativos. Detalhes: ${error.message}`);
+            alert(`Erro ao carregar usuários ativos: ${error.message}`);
         });
     }
 
@@ -358,15 +349,12 @@ function initializeApp() {
             const decodedUserId = decodeURIComponent(user.userId || '-');
             const decodedName = decodeURIComponent(user.name || '-');
             const isIndicated = user.indication === 'Soneca';
-            const paymentText = Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0 
-                ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${formatDate(new Date(p.timestamp))})`).join('; ') 
-                : '-';
             row.innerHTML = `
                 <td>${decodedUserId}</td>
                 <td>${decodedName}</td>
                 <td>${user.whatsapp || '-'}</td>
                 <td title="${registeredAt ? registeredAt.toLocaleDateString('pt-BR') : '-'}">${registeredValue}</td>
-                <td title="${paymentText}">${paymentText}</td>
+                <td>${Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0 ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${formatDate(new Date(p.timestamp))})`).join('<br>') : '-'}</td>
                 <td>${balanceValue.toFixed(2)}</td>
                 <td title="${expirationDate ? expirationDate.toLocaleDateString('pt-BR') : '-'}">${expirationValue}</td>
                 <td>${daysRemaining}</td>
@@ -400,14 +388,12 @@ function initializeApp() {
 
     editExpirationInput.addEventListener('change', () => {
         const selectedDate = new Date(editExpirationInput.value);
-        if (selectedDate && !isNaN(selectedDate.getTime()) && editExpirationInput.value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        if (selectedDate && !isNaN(selectedDate.getTime())) {
             updateDaysRemaining(selectedDate);
             console.log('Data de expiração alterada para:', editExpirationInput.value);
         } else {
-            editExpirationInput.value = '';
             editDaysRemainingInput.value = '0 dias';
             console.log('Data de expiração inválida, resetada para 0 dias');
-            alert('Por favor, insira uma data válida no formato AAAA-MM-DD.');
         }
     });
 
@@ -679,4 +665,4 @@ function initializeApp() {
     }
 
     loadUsers();
-}
+});

@@ -6,6 +6,95 @@
     font-family: Arial, sans-serif;
 }
 
+/* Estilo para a página de login */
+.login-body {
+    background: linear-gradient(135deg, #060b11, #1b2c3b);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.login-container {
+    max-width: 400px;
+    width: 90%;
+    background: #070707; /* Alterado para preto, cor da logo */
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    animation: fadeIn 2.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.login-logo {
+    max-width: 200px;
+    margin-bottom: 10px;
+}
+
+.login-container h1 {
+    font-size: 30px;
+    color: #ad9425; /* Alterado para branco para contraste no fundo preto */
+    margin-bottom: 10px;
+    margin-top: 1px;
+}
+
+.login-field {
+    margin-bottom: 20px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.login-field label {
+    display: block;
+    font-size: 15px;
+    color: #ad9425; /* Cinza claro para contraste no fundo preto */
+    margin-bottom: 5px;
+}
+
+.login-field input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #444444; /* Borda mais escura para contraste */
+    border-radius: 6px;
+    background: #181818; /* Fundo mais escuro para os inputs */
+    color: #ffffff; /* Texto branco nos inputs */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.login-field input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+}
+
+.login-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(90deg, #161507, #927804);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.login-btn:hover {
+    background: linear-gradient(90deg, #927804, #292713);
+    transform: translateY(-2px);
+}
+
+.login-btn:active {
+    transform: translateY(0);
+}
+
 /* Layout principal */
 .layout {
     display: flex;
@@ -112,6 +201,19 @@
     background: #34495e;
 }
 
+/* Conteúdo principal */
+.main-content {
+    margin-left: 50px;
+    padding: 20px;
+    width: calc(100% - 50px);
+    transition: margin-left 0.3s ease, width 0.3s ease;
+}
+
+.sidebar.active ~ .main-content {
+    margin-left: 200px;
+    width: calc(100% - 200px);
+}
+
 /* Header */
 header {
     display: flex;
@@ -125,17 +227,6 @@ header {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     z-index: 1000;
     position: relative;
-}
-
-.header-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.header-logo {
-    max-width: 150px;
-    height: auto;
 }
 
 header h1 {
@@ -222,15 +313,6 @@ header h1 {
     vertical-align: middle;
 }
 
-#usersTable th:nth-child(5),
-#usersTable td:nth-child(5) {
-    max-width: 250px; /* Aumentado para acomodar mais texto */
-    white-space: nowrap; /* Evita quebras de linha */
-    overflow: hidden; /* Oculta texto excedente */
-    text-overflow: ellipsis; /* Adiciona "..." quando cortado */
-    padding: 6px;
-}
-
 #usersTable th {
     background-color: #34495e;
     color: #ecf0f1;
@@ -254,16 +336,16 @@ header h1 {
 
 /* Botões de ação */
 .action-btn {
-    padding: 6px 8px;
+    padding: 4px 6px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 10px;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
     transition: transform 0.2s ease, background-color 0.3s ease, box-shadow 0.2s ease;
-    margin-right: 4px;
+    margin-right: 2px;
 }
 
 .edit-btn {
@@ -472,13 +554,6 @@ header h1 {
 
     #usersTable th:nth-child(5),
     #usersTable td:nth-child(5) {
-        max-width: 180px; /* Ajuste para telas menores */
-    }
-
-    #usersTable th:nth-child(3),
-    #usersTable td:nth-child(3),
-    #usersTable th:nth-child(6),
-    #usersTable td:nth-child(6) {
         display: none;
     }
 
@@ -534,13 +609,10 @@ header h1 {
         max-width: 80px;
     }
 
-    #usersTable th:nth-child(5),
-    #usersTable td:nth-child(5) {
-        max-width: 140px; /* Ajuste para telas muito pequenas */
-    }
-
     #usersTable th:nth-child(3),
     #usersTable td:nth-child(3),
+    #usersTable th:nth-child(5),
+    #usersTable td:nth-child(5),
     #usersTable th:nth-child(6),
     #usersTable td:nth-child(6) {
         display: none;
