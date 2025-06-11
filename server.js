@@ -3,7 +3,6 @@ const { MongoClient, ObjectId } = require('mongodb');
 const path = require('path');
 require('dotenv').config();
 const cors = require('cors');
-const cookieParser = require('cookie-parser');
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -41,14 +40,11 @@ async function ensureDBConnection() {
 
 // Configurar middleware
 app.use(cors({
-    origin: process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://site-moneybet.onrender.com', // Flexível para dev
-    credentials: true,
+    origin: process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://site-moneybet.onrender.com',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    exposedHeaders: ['Set-Cookie']
 }));
 app.use(express.static(path.join(__dirname, '.')));
 app.use(express.json());
-app.use(cookieParser());
 
 // Fechar conexão ao encerrar o servidor
 process.on('SIGINT', async () => {
@@ -62,12 +58,8 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'login.html'));
 });
 
-// Rota para servir index.html apenas para usuários autenticados
-app.get('/index.html', (req, res, next) => {
-    if (!req.cookies.auth || req.cookies.auth !== 'true') {
-        console.log('Usuário não autenticado, redirecionando para login');
-        return res.redirect('/');
-    }
+// Rota para servir index.html (acesso direto, sem autenticação)
+app.get('/index.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
@@ -152,7 +144,7 @@ app.put('/user/:userId', async (req, res) => {
         console.log(`Rota PUT /user/${req.params.userId} acessada`);
         db = await ensureDBConnection();
         const userId = req.params.userId;
-        const { name, expirationDate, indication } = req.body; // Removido balance, pois é fixo em 0
+        const { name, expirationDate, indication } = req.body;
 
         console.log('Dados recebidos:', { name, expirationDate, indication });
 
@@ -233,7 +225,7 @@ app.delete('/user/:userId', async (req, res) => {
         }
 
         console.log(`Cancelando assinatura do usuário ${userId}`);
-        const result = await db.collection('expirationDates').deleteOne({ userId: userId }); // Assumindo userId como string
+        const result = await db.collection('expirationDates').deleteOne({ userId: userId });
 
         if (result.deletedCount === 0) {
             console.warn(`Nenhum documento encontrado para userId ${userId} na coleção expirationDates`);
@@ -294,38 +286,10 @@ app.delete('/user/:userId/all', async (req, res) => {
     }
 });
 
-// Rota para login
+// Rota para login (simples redirecionamento)
 app.post('/login', (req, res) => {
     console.log('Rota /login acessada');
-    const { username, password } = req.body;
-
-    if (username === 'admin' && password === '123') {
-        res.cookie('auth', 'true', { 
-            maxAge: 3600000, 
-            httpOnly: true, 
-            secure: process.env.NODE_ENV === 'production', // Desativado em dev
-            sameSite: 'lax' // Permite redirecionamentos
-        });
-        console.log('Login bem-sucedido, cookie definido');
-        res.json({ success: true, message: 'Login bem-sucedido' });
-    } else {
-        console.log('Credenciais inválidas');
-        res.status(401).json({ success: false, message: 'Credenciais inválidas' });
-    }
-});
-
-// Rota para verificar autenticação
-app.get('/check-auth', (req, res) => {
-    console.log('Rota /check-auth acessada, cookie auth:', req.cookies.auth);
-    const isAuthenticated = req.cookies.auth === 'true';
-    res.json({ isAuthenticated });
-});
-
-// Rota para logout
-app.post('/logout', (req, res) => {
-    console.log('Rota /logout acessada');
-    res.clearCookie('auth');
-    res.json({ success: true, message: 'Logout bem-sucedido' });
+    res.json({ success: true, message: 'Redirecionando...' });
 });
 
 app.listen(port, () => {
