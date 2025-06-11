@@ -10,7 +10,7 @@ let editIndicationInput = null;
 let cancelNameDisplay = null;
 let currentUserId = null;
 
-// Função de login inicial (simulação)
+// Função de login
 function performLogin() {
     console.log('Tentando login...');
     fetch('https://site-moneybet.onrender.com/login', {
@@ -40,11 +40,22 @@ function performLogin() {
     });
 }
 
+// Função para verificar se o cookie auth está presente
+function isAuthenticated() {
+    const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
+        const [name, value] = cookie.split('=');
+        acc[name] = value;
+        return acc;
+    }, {});
+    console.log('Cookies analisados:', cookies);
+    return cookies.auth === 'true';
+}
+
 // Inicialização da aplicação
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Verificando status de login...');
-    // Tentar login automaticamente se não autenticado (simulação)
-    if (window.location.pathname === '/login.html' || !document.cookie.includes('auth=true')) {
+    if (window.location.pathname === '/login.html' && !isAuthenticated()) {
+        console.log('Página de login detectada e não autenticado, iniciando login automático.');
         performLogin();
         return;
     }
@@ -57,9 +68,10 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => {
             console.log('Dados de autenticação:', data);
             if (!data.isAuthenticated) {
-                console.log('Cookie auth no cliente:', document.cookie); // Depuração
                 console.log('Usuário não autenticado. Redirecionando para login.html');
-                setTimeout(() => window.location.href = '/login.html', 1000);
+                if (window.location.pathname !== '/login.html') {
+                    window.location.href = '/login.html';
+                }
                 return;
             }
             console.log('Usuário autenticado. Inicializando aplicação.');
@@ -67,7 +79,9 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(error => {
             console.error('Erro ao verificar autenticação:', error);
-            window.location.href = '/login.html';
+            if (window.location.pathname !== '/login.html') {
+                window.location.href = '/login.html';
+            }
         });
 
     function initializeApp() {
