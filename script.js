@@ -10,21 +10,30 @@ let editIndicationInput = null;
 let cancelNameDisplay = null;
 let currentUserId = null;
 
-// Verificação de login e timer de redirecionamento
+// Verificação de login e inicialização
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Verificando status de login...');
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) {
-        console.log('Usuário não está logado. Iniciando timer de 1 segundo para redirecionamento.');
-        setTimeout(() => {
-            console.log('Timer expirado. Redirecionando para login.html');
-            window.location.href = '/login.html';
-        }, 1000); // 1 segundo1
-    } else {
-        console.log('Usuário está logado. Acesso permitido.');
-    }
+    fetch('https://site-moneybet.onrender.com/check-auth', {
+        credentials: 'include',
+        mode: 'cors'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.isAuthenticated) {
+            console.log('Usuário não está logado. Redirecionando para login.html');
+            setTimeout(() => window.location.href = '/login.html', 1000);
+        } else {
+            console.log('Usuário está logado. Acesso permitido.');
+            initializeApp();
+        }
+    })
+    .catch(error => {
+        console.error('Erro ao verificar autenticação:', error);
+        window.location.href = '/login.html';
+    });
+});
 
-    // Restante do código existente
+function initializeApp() {
     const tableBody = document.getElementById('usersTableBody');
     const totalUsersEl = document.getElementById('total-users');
     const totalBalanceEl = document.getElementById('total-balance');
@@ -349,18 +358,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const decodedUserId = decodeURIComponent(user.userId || '-');
             const decodedName = decodeURIComponent(user.name || '-');
             const isIndicated = user.indication === 'Soneca';
+            const paymentText = Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0 
+                ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${formatDate(new Date(p.timestamp))})`).join('<br>') 
+                : '-';
             row.innerHTML = `
                 <td>${decodedUserId}</td>
                 <td>${decodedName}</td>
                 <td>${user.whatsapp || '-'}</td>
                 <td title="${registeredAt ? registeredAt.toLocaleDateString('pt-BR') : '-'}">${registeredValue}</td>
-                <td>${Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0 ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${formatDate(new Date(p.timestamp))})`).join('<br>') : '-'}</td>
+                <td title="${paymentText}">${paymentText}</td>
                 <td>${balanceValue.toFixed(2)}</td>
                 <td title="${expirationDate ? expirationDate.toLocaleDateString('pt-BR') : '-'}">${expirationValue}</td>
                 <td>${daysRemaining}</td>
                 <td>
-                    <button class="action-btn edit-btn" onclick="openEditModal('${user.userId || ''}', '${(user.name || '').replace(/'/g, "\\'")}', ${balanceValue}, '${user.expirationDate || ''}')"><i class="fas fa-edit"></i> Editar</button>
-                    <button class="action-btn delete-btn" onclick="openCancelModal('${user.userId || ''}', '${(user.name || '').replace(/'/g, "\\'")}')"><i class="fas fa-trash-alt"></i> Excluir</button>
+                    <button class="action-btn edit-btn" onclick="openEditModal('${encodeURIComponent(user.userId || '')}', '${encodeURIComponent(user.name || '')}', ${balanceValue}, '${user.expirationDate || ''}')"><i class="fas fa-edit"></i> Editar</button>
+                    <button class="action-btn delete-btn" onclick="openCancelModal('${encodeURIComponent(user.userId || '')}', '${encodeURIComponent(user.name || '')}')"><i class="fas fa-trash-alt"></i> Excluir</button>
                 </td>
             `;
             if (isIndicated) {
@@ -429,7 +441,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const requestBody = { name, balance: 0, expirationDate, indication };
             console.log('Enviando atualização para o servidor:', { userId: currentUserId, requestBody });
-            fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
+            fetch(`https://site-moneybet.onrender.com/user/${encodeURIComponent(currentUserId)}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -503,10 +515,10 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Erro: Alguns elementos do modal de edição não foram encontrados');
             return;
         }
-        currentUserId = userId;
-        editIdInput.value = userId || '-';
-        editNameInput.value = name || '-';
-        editBalanceInput.value = (0).toFixed(2);
+        currentUserId = decodeURIComponent(userId);
+        editIdInput.value = decodeURIComponent(userId) || '-';
+        editNameInput.value = decodeURIComponent(name) || '-';
+        editBalanceInput.value = (balance || 0).toFixed(2);
         
         if (expirationDate) {
             try {
@@ -572,8 +584,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Erro: Elementos do modal de cancelamento não foram encontrados');
             return;
         }
-        currentUserId = userId;
-        cancelNameDisplay.textContent = name || '-';
+        currentUserId = decodeURIComponent(userId);
+        cancelNameDisplay.textContent = decodeURIComponent(name) || '-';
         $('#cancelModal').modal('show');
         console.log('Modal de cancelamento exibido');
 
@@ -589,7 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert('Erro: ID do usuário não encontrado.');
                     return;
                 }
-                fetch(`https://site-moneybet.onrender.com/user/${currentUserId}`, {
+                fetch(`https://site-moneybet.onrender.com/user/${encodeURIComponent(currentUserId)}`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -634,7 +646,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log('Exclusão cancelada pelo usuário');
                     return;
                 }
-                fetch(`https://site-moneybet.onrender.com/user/${currentUserId}/all`, {
+                fetch(`https://site-moneybet.onrender.com/user/${encodeURIComponent(currentUserId)}/all`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -665,4 +677,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     loadUsers();
-});
+}
