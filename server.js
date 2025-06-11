@@ -41,7 +41,7 @@ async function ensureDBConnection() {
 
 // Configurar middleware
 app.use(cors({
-    origin: 'https://site-moneybet.onrender.com', // Substitua pelo domínio real
+    origin: process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://site-moneybet.onrender.com', // Flexível para dev
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     exposedHeaders: ['Set-Cookie']
@@ -58,10 +58,8 @@ process.on('SIGINT', async () => {
 });
 
 // Rota para a raiz (/) que serve o login.html como página inicial
-app.get('/check-auth', (req, res) => {
-    console.log('Rota /check-auth acessada, cookie auth:', req.cookies.auth);
-    const isAuthenticated = req.cookies.auth === 'true';
-    res.json({ isAuthenticated });
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'login.html'));
 });
 
 // Rota para servir index.html apenas para usuários autenticados
@@ -302,7 +300,12 @@ app.post('/login', (req, res) => {
     const { username, password } = req.body;
 
     if (username === 'admin' && password === '123') {
-        res.cookie('auth', 'true', { maxAge: 3600000, httpOnly: true });
+        res.cookie('auth', 'true', { 
+            maxAge: 3600000, 
+            httpOnly: true, 
+            secure: process.env.NODE_ENV === 'production', // Desativado em dev
+            sameSite: 'lax' // Permite redirecionamentos
+        });
         console.log('Login bem-sucedido, cookie definido');
         res.json({ success: true, message: 'Login bem-sucedido' });
     } else {
@@ -313,7 +316,7 @@ app.post('/login', (req, res) => {
 
 // Rota para verificar autenticação
 app.get('/check-auth', (req, res) => {
-    console.log('Rota /check-auth acessada');
+    console.log('Rota /check-auth acessada, cookie auth:', req.cookies.auth);
     const isAuthenticated = req.cookies.auth === 'true';
     res.json({ isAuthenticated });
 });

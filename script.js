@@ -10,9 +10,45 @@ let editIndicationInput = null;
 let cancelNameDisplay = null;
 let currentUserId = null;
 
+// Função de login inicial (simulação)
+function performLogin() {
+    console.log('Tentando login...');
+    fetch('https://site-moneybet.onrender.com/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        mode: 'cors',
+        body: JSON.stringify({ username: 'admin', password: '123' })
+    })
+    .then(response => {
+        console.log('Resposta de /login:', { status: response.status, statusText: response.statusText });
+        return response.json();
+    })
+    .then(data => {
+        console.log('Dados de login:', data);
+        if (data.success) {
+            console.log('Login bem-sucedido, redirecionando para /index.html');
+            window.location.href = '/index.html';
+        } else {
+            console.error('Falha no login:', data.message);
+            alert('Falha no login: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erro ao fazer login:', error);
+        alert('Erro ao conectar: ' + error.message);
+    });
+}
+
 // Inicialização da aplicação
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Verificando status de login...');
+    // Tentar login automaticamente se não autenticado (simulação)
+    if (window.location.pathname === '/login.html' || !document.cookie.includes('auth=true')) {
+        performLogin();
+        return;
+    }
+
     fetch('https://site-moneybet.onrender.com/check-auth', { credentials: 'include', mode: 'cors' })
         .then(response => {
             console.log('Resposta de /check-auth:', { status: response.status, statusText: response.statusText });
@@ -21,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => {
             console.log('Dados de autenticação:', data);
             if (!data.isAuthenticated) {
+                console.log('Cookie auth no cliente:', document.cookie); // Depuração
                 console.log('Usuário não autenticado. Redirecionando para login.html');
                 setTimeout(() => window.location.href = '/login.html', 1000);
                 return;
