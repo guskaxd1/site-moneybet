@@ -3,6 +3,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 const path = require('path');
 require('dotenv').config();
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -40,26 +41,27 @@ async function ensureDBConnection() {
 
 // Configurar middleware
 app.use(cors({
-    origin: process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://site-moneybet.onrender.com',
+    origin: '*',
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    exposedHeaders: ['Set-Cookie']
 }));
 app.use(express.static(path.join(__dirname, '.')));
 app.use(express.json());
-
-// Fechar conexão ao encerrar o servidor
-process.on('SIGINT', async () => {
-    await client.close();
-    console.log('Conexão com MongoDB fechada');
-    process.exit();
-});
+app.use(cookieParser());
 
 // Rota para a raiz (/) que serve o login.html como página inicial
 app.get('/', (req, res) => {
+    console.log('Rota / acessada');
     res.sendFile(path.join(__dirname, 'login.html'));
 });
 
-// Rota para servir index.html (acesso direto, sem autenticação)
-app.get('/index.html', (req, res) => {
+// Rota para servir index.html apenas para usuários autenticados
+app.get('/index.html', (req, res, next) => {
+    if (!req.cookies.auth || req.cookies.auth !== 'true') {
+        console.log('Usuário não autenticado, redirecionando para login');
+        return res.redirect('/');
+    }
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
@@ -144,13 +146,13 @@ app.put('/user/:userId', async (req, res) => {
         console.log(`Rota PUT /user/${req.params.userId} acessada`);
         db = await ensureDBConnection();
         const userId = req.params.userId;
-        const { name, expirationDate, indication } = req.body;
+        const { name, balance, expirationDate, indication } = req.body;
 
-        console.log('Dados recebidos:', { name, expirationDate, indication });
+        console.log('Dados recebidos:', { name, balance, expirationDate, indication });
 
-        if (!name) {
-            console.warn('Validação falhou: Nome não pode ser vazio');
-            return res.status(400).json({ error: 'Nome não pode ser vazio' });
+        if (balance !== undefined && (isNaN(parseFloat(balance)) || parseFloat(balance) < 0)) {
+            console.warn('Validação falhou: Saldo deve ser um número positivo');
+            return res.status(400).json({ error: 'Saldo deve ser um número positivo' });
         }
 
         let parsedExpirationDate = null;
@@ -159,11 +161,11 @@ app.put('/user/:userId', async (req, res) => {
                 parsedExpirationDate = new Date(expirationDate);
                 if (isNaN(parsedExpirationDate.getTime())) {
                     console.warn('Validação falhou: Data de expiração inválida', { expirationDate });
-                    return res.status(400).json({ error: 'Data de expiração inválida', details: expirationDate });
+                    return res.status(400).json({ error: 'Data de expiração inválida' });
                 }
             } catch (err) {
                 console.warn('Erro ao parsear expirationDate:', err.message, { expirationDate });
-                return res.status(400).json({ error: 'Formato de data inválido', details: err.message });
+                return res.status(400).json({ error: 'Formato de data inválido' });
             }
         }
 
@@ -175,6 +177,10 @@ app.put('/user/:userId', async (req, res) => {
                 { upsert: true }
             );
             console.log('Resultado da atualização de nome e indicação:', result);
+        }
+
+        if (balance !== undefined) {
+            console.warn('Atualização de saldo ignorada, mantendo saldo zerado');
         }
 
         if (expirationDate !== undefined) {
@@ -225,11 +231,54 @@ app.delete('/user/:userId', async (req, res) => {
         }
 
         console.log(`Cancelando assinatura do usuário ${userId}`);
-        const result = await db.collection('expirationDates').deleteOne({ userId: userId });
 
-        if (result.deletedCount === 0) {
+        const allExpirationDocs = await db.collection('expirationDates').find().toArray();
+        console.log('Todos os documentos na coleção expirationDates:', allExpirationDocs);
+
+        let existingDoc = await db.collection('expirationDates').findOne({ userId: userId });
+        console.log('Documento encontrado como string:', existingDoc);
+
+        if (!existingDoc) {
+            const userIdAsNumber = parseInt(userId);
+            if (!isNaN(userIdAsNumber)) {
+                existingDoc = await db.collection('expirationDates').findOne({ userId: userIdAsNumber });
+                console.log('Documento encontrado como número:', existingDoc);
+            }
+        }
+
+        if (!existingDoc) {
+            try {
+                existingDoc = await db.collection('expirationDates').findOne({ userId: new ObjectId(userId) });
+                console.log('Documento encontrado como ObjectId:', existingDoc);
+            } catch (err) {
+                console.log('Não é um ObjectId válido:', err.message);
+            }
+        }
+
+        if (!existingDoc) {
             console.warn(`Nenhum documento encontrado para userId ${userId} na coleção expirationDates`);
             return res.status(404).json({ message: 'Nenhuma assinatura encontrada para cancelar' });
+        }
+
+        const userIdInDoc = existingDoc.userId;
+        let deleteQuery;
+        if (typeof userIdInDoc === 'string') {
+            deleteQuery = { userId: userId };
+        } else if (typeof userIdInDoc === 'number') {
+            deleteQuery = { userId: parseInt(userId) };
+        } else if (userIdInDoc instanceof ObjectId) {
+            deleteQuery = { userId: new ObjectId(userId) };
+        } else {
+            console.error('Tipo de userId desconhecido no documento:', typeof userIdInDoc);
+            return res.status(500).json({ error: 'Erro interno: Tipo de userId desconhecido' });
+        }
+
+        const result = await db.collection('expirationDates').deleteOne(deleteQuery);
+        console.log('Resultado da exclusão de data de expiração:', { deletedCount: result.deletedCount });
+
+        if (result.deletedCount === 0) {
+            console.warn(`Falha ao excluir documento para userId ${userId} na coleção expirationDates`);
+            return res.status(500).json({ message: 'Falha ao cancelar a assinatura' });
         }
 
         res.setHeader('Content-Type', 'application/json');
@@ -253,43 +302,97 @@ app.delete('/user/:userId/all', async (req, res) => {
         }
 
         console.log(`Excluindo todos os dados do usuário ${userId}`);
-        const session = await db.client.startSession();
-        try {
-            session.startTransaction();
-            const deleteOps = [
-                db.collection('expirationDates').deleteOne({ userId: userId }),
-                db.collection('userBalances').deleteOne({ userId: userId }),
-                db.collection('registeredUsers').deleteOne({ userId: userId })
-            ];
-            const results = await Promise.all(deleteOps);
-            const totalDeleted = results.reduce((sum, r) => sum + r.deletedCount, 0);
 
-            if (totalDeleted === 0) {
-                await session.abortTransaction();
-                console.warn(`Nenhum dado excluído para userId ${userId}`);
-                return res.status(404).json({ message: 'Nenhum dado encontrado para excluir' });
+        const allExpirationDocs = await db.collection('expirationDates').find().toArray();
+        const allRegisteredDocs = await db.collection('registeredUsers').find().toArray();
+        const allBalanceDocs = await db.collection('userBalances').find().toArray();
+        console.log('Documentos na coleção expirationDates:', allExpirationDocs);
+        console.log('Documentos na coleção registeredUsers:', allRegisteredDocs);
+        console.log('Documentos na coleção userBalances:', allBalanceDocs);
+
+        let userDoc = await db.collection('registeredUsers').findOne({ userId: userId });
+        if (!userDoc) {
+            const userIdAsNumber = parseInt(userId);
+            if (!isNaN(userIdAsNumber)) {
+                userDoc = await db.collection('registeredUsers').findOne({ userId: userIdAsNumber });
             }
-
-            await session.commitTransaction();
-            res.setHeader('Content-Type', 'application/json');
-            res.json({ message: 'Todos os dados do usuário foram excluídos com sucesso', totalDeleted });
-        } catch (err) {
-            await session.abortTransaction();
-            console.error('Erro na transação:', err.message);
-            throw err;
-        } finally {
-            session.endSession();
         }
+        if (!userDoc) {
+            try {
+                userDoc = await db.collection('registeredUsers').findOne({ userId: new ObjectId(userId) });
+            } catch (err) {
+                console.log('Não é um ObjectId válido:', err.message);
+            }
+        }
+
+        if (!userDoc) {
+            console.warn(`Nenhum usuário encontrado para userId ${userId} na coleção registeredUsers`);
+            return res.status(404).json({ message: 'Usuário não encontrado' });
+        }
+
+        const userIdInDoc = userDoc.userId;
+        let deleteQuery;
+        if (typeof userIdInDoc === 'string') {
+            deleteQuery = { userId: userId };
+        } else if (typeof userIdInDoc === 'number') {
+            deleteQuery = { userId: parseInt(userId) };
+        } else if (userIdInDoc instanceof ObjectId) {
+            deleteQuery = { userId: new ObjectId(userId) };
+        } else {
+            console.error('Tipo de userId desconhecido no documento:', typeof userIdInDoc);
+            return res.status(500).json({ error: 'Erro interno: Tipo de userId desconhecido' });
+        }
+
+        const expirationResult = await db.collection('expirationDates').deleteOne(deleteQuery);
+        const balanceResult = await db.collection('userBalances').deleteOne(deleteQuery);
+        const registeredResult = await db.collection('registeredUsers').deleteOne(deleteQuery);
+
+        console.log('Resultado da exclusão de expirationDates:', { deletedCount: expirationResult.deletedCount });
+        console.log('Resultado da exclusão de userBalances:', { deletedCount: balanceResult.deletedCount });
+        console.log('Resultado da exclusão de registeredUsers:', { deletedCount: registeredResult.deletedCount });
+
+        const totalDeleted = expirationResult.deletedCount + balanceResult.deletedCount + registeredResult.deletedCount;
+
+        if (totalDeleted === 0) {
+            console.warn(`Nenhum dado excluído para userId ${userId}`);
+            return res.status(404).json({ message: 'Nenhum dado encontrado para excluir' });
+        }
+
+        res.setHeader('Content-Type', 'application/json');
+        res.json({ message: 'Todos os dados do usuário foram excluídos com sucesso', totalDeleted });
     } catch (err) {
         console.error('Erro na rota DELETE /user/:userId/all:', err.message);
         res.status(500).json({ error: 'Erro ao excluir todos os dados', details: err.message });
     }
 });
 
-// Rota para login (simples redirecionamento)
+// Rota para login
 app.post('/login', (req, res) => {
     console.log('Rota /login acessada');
-    res.json({ success: true, message: 'Redirecionando...' });
+    const { username, password } = req.body;
+
+    if (username === 'admin' && password === '123') {
+        res.cookie('auth', 'true', { maxAge: 3600000, httpOnly: true });
+        console.log('Login bem-sucedido, cookie definido');
+        res.json({ success: true, message: 'Login bem-sucedido' });
+    } else {
+        console.log('Credenciais inválidas');
+        res.status(401).json({ success: false, message: 'Credenciais inválidas' });
+    }
+});
+
+// Rota para verificar autenticação
+app.get('/check-auth', (req, res) => {
+    console.log('Rota /check-auth acessada');
+    const isAuthenticated = req.cookies.auth === 'true';
+    res.json({ isAuthenticated });
+});
+
+// Rota para logout
+app.post('/logout', (req, res) => {
+    console.log('Rota /logout acessada');
+    res.clearCookie('auth');
+    res.json({ success: true, message: 'Logout bem-sucedido' });
 });
 
 app.listen(port, () => {

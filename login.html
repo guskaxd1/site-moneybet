@@ -25,15 +25,25 @@
     </div>
 
     <script>
-        // Redirecionar automaticamente após 1 segundo
-        setTimeout(() => {
-            window.location.href = '/login.html';
-        }, 1000);
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            console.log('Formulário de login enviado');
 
-        // Função para redirecionar ao clicar em "Entrar"
-        function performLogin() {
-            window.location.href = '/index.html';
-        }
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            const validUsername = 'adm1';
+            const validPassword = 'Bueno00';
+
+            if (username === validUsername && password === validPassword) {
+                console.log('Credenciais válidas. Definindo isLoggedIn como true no localStorage');
+                localStorage.setItem('isLoggedIn', 'true');
+                window.location.href = '/index.html';
+            } else {
+                console.log('Credenciais inválidas:', { username, password });
+                alert('Erro: Usuário ou senha inválidos.');
+            }
+        });
     </script>
 </body>
 </html>
