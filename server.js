@@ -41,7 +41,7 @@ async function ensureDBConnection() {
 
 // Configurar middleware
 app.use(cors({
-    origin: '*',
+    origin: 'https://site-moneybet.onrender.com', // Substitua pelo domínio real
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     exposedHeaders: ['Set-Cookie']
@@ -49,6 +49,13 @@ app.use(cors({
 app.use(express.static(path.join(__dirname, '.')));
 app.use(express.json());
 app.use(cookieParser());
+
+// Fechar conexão ao encerrar o servidor
+process.on('SIGINT', async () => {
+    await client.close();
+    console.log('Conexão com MongoDB fechada');
+    process.exit();
+});
 
 // Rota para a raiz (/) que serve o login.html como página inicial
 app.get('/', (req, res) => {
@@ -146,13 +153,13 @@ app.put('/user/:userId', async (req, res) => {
         console.log(`Rota PUT /user/${req.params.userId} acessada`);
         db = await ensureDBConnection();
         const userId = req.params.userId;
-        const { name, balance, expirationDate, indication } = req.body;
+        const { name, expirationDate, indication } = req.body; // Removido balance, pois é fixo em 0
 
-        console.log('Dados recebidos:', { name, balance, expirationDate, indication });
+        console.log('Dados recebidos:', { name, expirationDate, indication });
 
-        if (balance !== undefined && (isNaN(parseFloat(balance)) || parseFloat(balance) < 0)) {
-            console.warn('Validação falhou: Saldo deve ser um número positivo');
-            return res.status(400).json({ error: 'Saldo deve ser um número positivo' });
+        if (!name) {
+            console.warn('Validação falhou: Nome não pode ser vazio');
+            return res.status(400).json({ error: 'Nome não pode ser vazio' });
         }
 
         let parsedExpirationDate = null;
@@ -161,11 +168,11 @@ app.put('/user/:userId', async (req, res) => {
                 parsedExpirationDate = new Date(expirationDate);
                 if (isNaN(parsedExpirationDate.getTime())) {
                     console.warn('Validação falhou: Data de expiração inválida', { expirationDate });
-                    return res.status(400).json({ error: 'Data de expiração inválida' });
+                    return res.status(400).json({ error: 'Data de expiração inválida', details: expirationDate });
                 }
             } catch (err) {
                 console.warn('Erro ao parsear expirationDate:', err.message, { expirationDate });
-                return res.status(400).json({ error: 'Formato de data inválido' });
+                return res.status(400).json({ error: 'Formato de data inválido', details: err.message });
             }
         }
 
@@ -177,10 +184,6 @@ app.put('/user/:userId', async (req, res) => {
                 { upsert: true }
             );
             console.log('Resultado da atualização de nome e indicação:', result);
-        }
-
-        if (balance !== undefined) {
-            console.warn('Atualização de saldo ignorada, mantendo saldo zerado');
         }
 
         if (expirationDate !== undefined) {
@@ -231,54 +234,11 @@ app.delete('/user/:userId', async (req, res) => {
         }
 
         console.log(`Cancelando assinatura do usuário ${userId}`);
-
-        const allExpirationDocs = await db.collection('expirationDates').find().toArray();
-        console.log('Todos os documentos na coleção expirationDates:', allExpirationDocs);
-
-        let existingDoc = await db.collection('expirationDates').findOne({ userId: userId });
-        console.log('Documento encontrado como string:', existingDoc);
-
-        if (!existingDoc) {
-            const userIdAsNumber = parseInt(userId);
-            if (!isNaN(userIdAsNumber)) {
-                existingDoc = await db.collection('expirationDates').findOne({ userId: userIdAsNumber });
-                console.log('Documento encontrado como número:', existingDoc);
-            }
-        }
-
-        if (!existingDoc) {
-            try {
-                existingDoc = await db.collection('expirationDates').findOne({ userId: new ObjectId(userId) });
-                console.log('Documento encontrado como ObjectId:', existingDoc);
-            } catch (err) {
-                console.log('Não é um ObjectId válido:', err.message);
-            }
-        }
-
-        if (!existingDoc) {
-            console.warn(`Nenhum documento encontrado para userId ${userId} na coleção expirationDates`);
-            return res.status(404).json({ message: 'Nenhuma assinatura encontrada para cancelar' });
-        }
-
-        const userIdInDoc = existingDoc.userId;
-        let deleteQuery;
-        if (typeof userIdInDoc === 'string') {
-            deleteQuery = { userId: userId };
-        } else if (typeof userIdInDoc === 'number') {
-            deleteQuery = { userId: parseInt(userId) };
-        } else if (userIdInDoc instanceof ObjectId) {
-            deleteQuery = { userId: new ObjectId(userId) };
-        } else {
-            console.error('Tipo de userId desconhecido no documento:', typeof userIdInDoc);
-            return res.status(500).json({ error: 'Erro interno: Tipo de userId desconhecido' });
-        }
-
-        const result = await db.collection('expirationDates').deleteOne(deleteQuery);
-        console.log('Resultado da exclusão de data de expiração:', { deletedCount: result.deletedCount });
+        const result = await db.collection('expirationDates').deleteOne({ userId: userId }); // Assumindo userId como string
 
         if (result.deletedCount === 0) {
-            console.warn(`Falha ao excluir documento para userId ${userId} na coleção expirationDates`);
-            return res.status(500).json({ message: 'Falha ao cancelar a assinatura' });
+            console.warn(`Nenhum documento encontrado para userId ${userId} na coleção expirationDates`);
+            return res.status(404).json({ message: 'Nenhuma assinatura encontrada para cancelar' });
         }
 
         res.setHeader('Content-Type', 'application/json');
@@ -302,64 +262,33 @@ app.delete('/user/:userId/all', async (req, res) => {
         }
 
         console.log(`Excluindo todos os dados do usuário ${userId}`);
+        const session = await db.client.startSession();
+        try {
+            session.startTransaction();
+            const deleteOps = [
+                db.collection('expirationDates').deleteOne({ userId: userId }),
+                db.collection('userBalances').deleteOne({ userId: userId }),
+                db.collection('registeredUsers').deleteOne({ userId: userId })
+            ];
+            const results = await Promise.all(deleteOps);
+            const totalDeleted = results.reduce((sum, r) => sum + r.deletedCount, 0);
 
-        const allExpirationDocs = await db.collection('expirationDates').find().toArray();
-        const allRegisteredDocs = await db.collection('registeredUsers').find().toArray();
-        const allBalanceDocs = await db.collection('userBalances').find().toArray();
-        console.log('Documentos na coleção expirationDates:', allExpirationDocs);
-        console.log('Documentos na coleção registeredUsers:', allRegisteredDocs);
-        console.log('Documentos na coleção userBalances:', allBalanceDocs);
-
-        let userDoc = await db.collection('registeredUsers').findOne({ userId: userId });
-        if (!userDoc) {
-            const userIdAsNumber = parseInt(userId);
-            if (!isNaN(userIdAsNumber)) {
-                userDoc = await db.collection('registeredUsers').findOne({ userId: userIdAsNumber });
+            if (totalDeleted === 0) {
+                await session.abortTransaction();
+                console.warn(`Nenhum dado excluído para userId ${userId}`);
+                return res.status(404).json({ message: 'Nenhum dado encontrado para excluir' });
             }
+
+            await session.commitTransaction();
+            res.setHeader('Content-Type', 'application/json');
+            res.json({ message: 'Todos os dados do usuário foram excluídos com sucesso', totalDeleted });
+        } catch (err) {
+            await session.abortTransaction();
+            console.error('Erro na transação:', err.message);
+            throw err;
+        } finally {
+            session.endSession();
         }
-        if (!userDoc) {
-            try {
-                userDoc = await db.collection('registeredUsers').findOne({ userId: new ObjectId(userId) });
-            } catch (err) {
-                console.log('Não é um ObjectId válido:', err.message);
-            }
-        }
-
-        if (!userDoc) {
-            console.warn(`Nenhum usuário encontrado para userId ${userId} na coleção registeredUsers`);
-            return res.status(404).json({ message: 'Usuário não encontrado' });
-        }
-
-        const userIdInDoc = userDoc.userId;
-        let deleteQuery;
-        if (typeof userIdInDoc === 'string') {
-            deleteQuery = { userId: userId };
-        } else if (typeof userIdInDoc === 'number') {
-            deleteQuery = { userId: parseInt(userId) };
-        } else if (userIdInDoc instanceof ObjectId) {
-            deleteQuery = { userId: new ObjectId(userId) };
-        } else {
-            console.error('Tipo de userId desconhecido no documento:', typeof userIdInDoc);
-            return res.status(500).json({ error: 'Erro interno: Tipo de userId desconhecido' });
-        }
-
-        const expirationResult = await db.collection('expirationDates').deleteOne(deleteQuery);
-        const balanceResult = await db.collection('userBalances').deleteOne(deleteQuery);
-        const registeredResult = await db.collection('registeredUsers').deleteOne(deleteQuery);
-
-        console.log('Resultado da exclusão de expirationDates:', { deletedCount: expirationResult.deletedCount });
-        console.log('Resultado da exclusão de userBalances:', { deletedCount: balanceResult.deletedCount });
-        console.log('Resultado da exclusão de registeredUsers:', { deletedCount: registeredResult.deletedCount });
-
-        const totalDeleted = expirationResult.deletedCount + balanceResult.deletedCount + registeredResult.deletedCount;
-
-        if (totalDeleted === 0) {
-            console.warn(`Nenhum dado excluído para userId ${userId}`);
-            return res.status(404).json({ message: 'Nenhum dado encontrado para excluir' });
-        }
-
-        res.setHeader('Content-Type', 'application/json');
-        res.json({ message: 'Todos os dados do usuário foram excluídos com sucesso', totalDeleted });
     } catch (err) {
         console.error('Erro na rota DELETE /user/:userId/all:', err.message);
         res.status(500).json({ error: 'Erro ao excluir todos os dados', details: err.message });
