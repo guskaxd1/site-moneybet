@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!date || isNaN(date.getTime())) return '-';
                 const day = String(date.getDate()).padStart(2, '0');
                 const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = String(date.getFullYear()).slice(-2);
+                const year = date.getFullYear();
                 return `${day}/${month}/${year}`;
             };
             const registeredValue = registeredAt ? formatDate(registeredAt) : '-';
@@ -599,10 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const cancelSubscriptionBtn = document.querySelector('#cancelModal .delete-btn');
         if (cancelSubscriptionBtn) {
-            const newCancelBtn = cancelSubscriptionBtn.cloneNode(true);
-            cancelSubscriptionBtn.parentNode.replaceChild(newCancelBtn, cancelSubscriptionBtn);
-            
-            newCancelBtn.addEventListener('click', () => {
+            cancelSubscriptionBtn.addEventListener('click', () => {
                 console.log('Botão "Cancelar Assinatura" clicado para userId:', currentUserId);
                 if (!currentUserId) {
                     console.error('Erro: currentUserId não definido');
@@ -632,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.error('Erro ao cancelar assinatura:', error.message);
                     alert(`Erro ao cancelar assinatura: ${error.message}`);
                 });
-            });
+            }, { once: true });
             console.log('Evento de clique associado ao botão "Cancelar Assinatura"');
         } else {
             console.error('Erro: Botão "Cancelar Assinatura" não encontrado');
@@ -640,10 +637,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const deleteAllBtn = document.querySelector('#cancelModal .delete-all-btn');
         if (deleteAllBtn) {
-            const newDeleteAllBtn = deleteAllBtn.cloneNode(true);
-            deleteAllBtn.parentNode.replaceChild(newDeleteAllBtn, deleteAllBtn);
-
-            newDeleteAllBtn.addEventListener('click', () => {
+            deleteAllBtn.addEventListener('click', () => {
                 console.log('Botão "Excluir Todos os Dados" clicado para userId:', currentUserId);
                 if (!currentUserId) {
                     console.error('Erro: currentUserId não definido');
@@ -677,12 +671,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.error('Erro ao excluir todos os dados:', error.message);
                     alert(`Erro ao excluir todos os dados: ${error.message}`);
                 });
-            });
+            }, { once: true });
             console.log('Evento de clique associado ao botão "Excluir Todos os Dados"');
         } else {
             console.error('Erro: Botão "Excluir Todos os Dados" não encontrado');
         }
-    }
+    };
 
     loadUsers();
 });

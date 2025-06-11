@@ -81,74 +81,63 @@
                 </table>
             </div>
         </main>
-    </div>
-
-    <!-- Modal Editar Usuário -->
-    <div class="modal fade" id="editModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered" role="document">
+    </div> <!-- Modal de Edição -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Editar Usuário</h5>
-                    <button type="button" class="close" data-dismiss="modal">
-                        <span>×</span>
-                    </button>
+                    <h5 class="modal-title" id="editModalLabel">Editar Usuário</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="modal-field">
-                        <label for="edit-id">ID Discord</label>
-                        <input type="text" class="form-control" id="edit-id" readonly>
-                    </div>
-                    <div class="modal-field">
-                        <label for="edit-name">Nome</label>
-                        <input type="text" class="form-control" id="edit-name">
-                    </div>
-                    <div class="modal-field">
-                        <label for="edit-balance">Saldo</label>
-                        <input type="number" class="form-control" id="edit-balance" step="0.01">
-                    </div>
-                    <div class="modal-field">
-                        <label for="edit-expiration">Data de Expiração</label>
-                        <input type="date" class="form-control" id="edit-expiration">
-                    </div>
-                    <div class="modal-field">
-                        <label for="edit-days-remaining">Dias Restantes</label>
-                        <input type="text" class="form-control" id="edit-days-remaining" readonly>
-                    </div>
-                    <div class="modal-field">
-                        <label for="edit-indication">Indicação</label>
-                        <select id="edit-indication" class="form-control">
-                            <option value="" selected disabled>Selecione</option>
-                            <option value="Soneca">Soneca</option>
-                        </select>
-                    </div>
+                    <form>
+                        <div class="mb-3">
+                            <label for="edit-id" class="form-label">ID</label>
+                            <input type="text" class="form-control" id="edit-id" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-name" class="form-label">Nome</label>
+                            <input type="text" class="form-control" id="edit-name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-balance" class="form-label">Saldo</label>
+                            <input type="text" class="form-control" id="edit-balance" readonly value="0.00">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-expiration" class="form-label">Data de Expiração</label>
+                            <input type="date" class="form-control" id="edit-expiration">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-days-remaining" class="form-label">Dias Restantes</label>
+                            <input type="text" class="form-control" id="edit-days-remaining" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-indication" class="form-label">Indicação</label>
+                            <input type="text" class="form-control" id="edit-indication">
+                        </div>
+                    </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-primary save-btn">Salvar Alterações</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Cancelar Assinatura -->
-    <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered" role="document">
+    <!-- Modal de Cancelamento -->
+    <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Cancelar Assinatura</h5>
-                    <button type="button" class="close" data-dismiss="modal">
-                        <span>×</span>
-                    </button>
+                    <h5 class="modal-title" id="cancelModalLabel">Confirmar Cancelamento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body text-center">
-                    <p class="confirmation-text mb-4">Tem certeza que deseja cancelar a assinatura de <strong id="cancel-name"></strong>?</p>
-                    <div class="delete-user-box">
-                        <h4 class="delete-title mb-2">Excluir Usuário Totalmente</h4>
-                        <p class="delete-warning">Esta ação irá remover permanentemente todos os dados deste usuário (assinatura, saldo, histórico, etc.) do sistema. Confirme com cuidado.</p>
-                    </div>
+                <div class="modal-body">
+                    <p>Tem certeza que deseja cancelar a assinatura de <span id="cancel-name">-</span>?</p>
                 </div>
-                <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Não</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-danger delete-btn">Cancelar Assinatura</button>
                     <button type="button" class="btn btn-danger delete-all-btn">Excluir Todos os Dados</button>
                 </div>
