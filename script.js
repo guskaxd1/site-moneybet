@@ -10,30 +10,17 @@ let editIndicationInput = null;
 let cancelNameDisplay = null;
 let currentUserId = null;
 
-// Verificação de login e inicialização
+// Inicialização da aplicação
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Verificando status de login...');
-    fetch('https://site-moneybet.onrender.com/check-auth', {
-        credentials: 'include',
-        mode: 'cors'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (!data.isAuthenticated) {
-            console.log('Usuário não está logado. Redirecionando para login.html');
-            setTimeout(() => window.location.href = '/login.html', 1000);
-        } else {
-            console.log('Usuário está logado. Acesso permitido.');
-            initializeApp();
-        }
-    })
-    .catch(error => {
-        console.error('Erro ao verificar autenticação:', error);
-        window.location.href = '/login.html';
-    });
-});
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) {
+        console.log('Usuário não está logado. Redirecionando para login.html');
+        setTimeout(() => window.location.href = '/login.html', 1000);
+        return;
+    }
+    console.log('Usuário está logado. Inicializando aplicação.');
 
-function initializeApp() {
     const tableBody = document.getElementById('usersTableBody');
     const totalUsersEl = document.getElementById('total-users');
     const totalBalanceEl = document.getElementById('total-balance');
@@ -78,20 +65,12 @@ function initializeApp() {
             link.classList.add('active');
             const action = link.textContent.trim();
             console.log('Navegação para:', action);
-            if (action === 'Dashboard') {
-                loadDashboard();
-            } else if (action === 'Usuários') {
-                loadUsers();
-            } else if (action === 'Usuários Registrados') {
-                loadRegisteredUsers();
-            } else if (action === 'Usuários Ativos') {
-                loadActiveUsers();
-            } else if (link.id === 'logout') {
-                handleLogout();
-            }
-            if (window.innerWidth <= 768) {
-                sidebar.classList.remove('active');
-            }
+            if (action === 'Dashboard') loadDashboard();
+            else if (action === 'Usuários') loadUsers();
+            else if (action === 'Usuários Registrados') loadRegisteredUsers();
+            else if (action === 'Usuários Ativos') loadActiveUsers();
+            else if (link.id === 'logout') handleLogout();
+            if (window.innerWidth <= 768) sidebar.classList.remove('active');
         });
     });
 
@@ -100,47 +79,29 @@ function initializeApp() {
         showLoading();
         searchContainer.style.display = 'none';
         usersTable.style.display = 'none';
-        fetch('https://site-moneybet.onrender.com/users', {
-            credentials: 'include',
-            mode: 'cors'
-        })
-        .then(response => {
-            console.log('Resposta do servidor para Dashboard:', {
-                status: response.status,
-                statusText: response.statusText,
-                headers: Object.fromEntries(response.headers.entries())
-            });
-            if (!response.ok) {
-                throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
-            }
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                return response.text().then(text => {
-                    throw new Error(`Resposta não é JSON: ${text.substring(0, 50)}...`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Dados brutos recebidos:', data);
-            hideLoading();
-            if (!data || !data.users || data.users.length === 0) {
-                console.warn('Dados inválidos ou ausentes:', data);
+        fetch('https://site-moneybet.onrender.com/users', { credentials: 'include', mode: 'cors' })
+            .then(response => {
+                console.log('Resposta do servidor para Dashboard:', { status: response.status, statusText: response.statusText });
+                if (!response.ok) throw new Error(`Erro: ${response.status} - ${response.statusText}`);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Dados recebidos:', data);
+                hideLoading();
+                if (!data || !data.users || data.users.length === 0) {
+                    updateDashboardStats([]);
+                    showError('Nenhum dado disponível.');
+                    return;
+                }
+                allUsers = data.users;
+                updateDashboardStats(data);
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Erro ao carregar Dashboard:', error);
                 updateDashboardStats([]);
-                showError('Nenhum dado disponível.');
-                return;
-            }
-            allUsers = data.users;
-            updateDashboardStats(data);
-            console.log('Dashboard atualizado com:', data.users);
-        })
-        .catch(error => {
-            hideLoading();
-            console.error('Erro ao carregar Dashboard:', error);
-            updateDashboardStats([]);
-            showError(`Erro ao carregar dados: ${error.message}`);
-            alert(`Erro ao carregar dados: ${error.message}`);
-        });
+                showError(error.message);
+            });
     }
 
     function loadUsers() {
@@ -148,49 +109,31 @@ function initializeApp() {
         showLoading();
         searchContainer.style.display = 'block';
         usersTable.style.display = 'table';
-        fetch('https://site-moneybet.onrender.com/users', {
-            credentials: 'include',
-            mode: 'cors'
-        })
-        .then(response => {
-            console.log('Resposta do servidor para Usuários:', {
-                status: response.status,
-                statusText: response.statusText,
-                headers: Object.fromEntries(response.headers.entries())
-            });
-            if (!response.ok) {
-                throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
-            }
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                return response.text().then(text => {
-                    throw new Error(`Resposta não é JSON: ${text.substring(0, 50)}...`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Dados brutos recebidos:', JSON.stringify(data, null, 2));
-            hideLoading();
-            if (!data || !data.users || data.users.length === 0) {
-                console.warn('Nenhum usuário encontrado ou dados inválidos:', data);
-                tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário encontrado.</td></tr>';
+        fetch('https://site-moneybet.onrender.com/users', { credentials: 'include', mode: 'cors' })
+            .then(response => {
+                console.log('Resposta do servidor para Usuários:', { status: response.status, statusText: response.statusText });
+                if (!response.ok) throw new Error(`Erro: ${response.status} - ${response.statusText}`);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Dados recebidos:', data);
+                hideLoading();
+                if (!data || !data.users || data.users.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário encontrado.</td></tr>';
+                    updateDashboardStats(data);
+                    return;
+                }
+                allUsers = data.users;
                 updateDashboardStats(data);
-                return;
-            }
-            allUsers = data.users;
-            updateDashboardStats(data);
-            populateUserTable(data.users);
-            console.log('Usuários carregados:', data.users);
-        })
-        .catch(error => {
-            hideLoading();
-            console.error('Erro ao carregar Usuários:', error);
-            tableBody.innerHTML = `<tr><td colspan="9">Erro: ${error.message}</td></tr>`;
-            updateDashboardStats([]);
-            showError(`Erro ao carregar usuários: ${error.message}`);
-            alert(`Erro ao carregar usuários: ${error.message}`);
-        });
+                populateUserTable(data.users);
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Erro ao carregar Usuários:', error);
+                tableBody.innerHTML = `<tr><td colspan="9">Erro: ${error.message}</td></tr>`;
+                updateDashboardStats([]);
+                showError(error.message);
+            });
     }
 
     function loadRegisteredUsers() {
@@ -198,58 +141,33 @@ function initializeApp() {
         showLoading();
         searchContainer.style.display = 'block';
         usersTable.style.display = 'table';
-        fetch('https://site-moneybet.onrender.com/users', {
-            credentials: 'include',
-            mode: 'cors'
-        })
-        .then(response => {
-            console.log('Resposta do servidor para Usuários Registrados:', {
-                status: response.status,
-                statusText: response.statusText,
-                headers: Object.fromEntries(response.headers.entries())
-            });
-            if (!response.ok) {
-                throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
-            }
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                return response.text().then(text => {
-                    throw new Error(`Resposta não é JSON: ${text.substring(0, 50)}...`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Dados brutos recebidos:', data);
-            hideLoading();
-            if (!data || !data.users || data.users.length === 0) {
-                console.warn('Nenhum usuário encontrado ou dados inválidos:', data);
-                tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário registrado encontrado.</td></tr>';
+        fetch('https://site-moneybet.onrender.com/users', { credentials: 'include', mode: 'cors' })
+            .then(response => {
+                console.log('Resposta do servidor para Usuários Registrados:', { status: response.status, statusText: response.statusText });
+                if (!response.ok) throw new Error(`Erro: ${response.status} - ${response.statusText}`);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Dados recebidos:', data);
+                hideLoading();
+                if (!data || !data.users || data.users.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário registrado encontrado.</td></tr>';
+                    updateDashboardStats(data);
+                    return;
+                }
+                allUsers = data.users;
+                const registeredUsers = data.users.filter(user => !user.paymentHistory?.length && !user.expirationDate);
+                tableBody.innerHTML = registeredUsers.length ? '' : '<tr><td colspan="9">Nenhum usuário registrado sem pagamento encontrado.</td></tr>';
+                if (registeredUsers.length) populateUserTable(registeredUsers);
                 updateDashboardStats(data);
-                return;
-            }
-            allUsers = data.users;
-            const registeredUsers = data.users.filter(user => {
-                const hasNoPaymentHistory = !user.paymentHistory || user.paymentHistory.length === 0;
-                const hasNoExpiration = !user.expirationDate;
-                return hasNoPaymentHistory && hasNoExpiration;
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Erro ao carregar Usuários Registrados:', error);
+                tableBody.innerHTML = `<tr><td colspan="9">Erro: ${error.message}</td></tr>`;
+                updateDashboardStats([]);
+                showError(error.message);
             });
-            if (registeredUsers.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário registrado sem pagamento encontrado.</td></tr>';
-            } else {
-                populateUserTable(registeredUsers);
-            }
-            updateDashboardStats(data);
-            console.log('Usuários registrados carregados:', registeredUsers);
-        })
-        .catch(error => {
-            hideLoading();
-            console.error('Erro ao carregar Usuários Registrados:', error);
-            tableBody.innerHTML = `<tr><td colspan="9">Erro: ${error.message}</td></tr>`;
-            updateDashboardStats([]);
-            showError(`Erro ao carregar usuários registrados: ${error.message}`);
-            alert(`Erro ao carregar usuários registrados: ${error.message}`);
-        });
     }
 
     function loadActiveUsers() {
@@ -257,79 +175,42 @@ function initializeApp() {
         showLoading();
         searchContainer.style.display = 'block';
         usersTable.style.display = 'table';
-        fetch('https://site-moneybet.onrender.com/users', {
-            credentials: 'include',
-            mode: 'cors'
-        })
-        .then(response => {
-            console.log('Resposta do servidor para Usuários Ativos:', {
-                status: response.status,
-                statusText: response.statusText,
-                headers: Object.fromEntries(response.headers.entries())
-            });
-            if (!response.ok) {
-                throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
-            }
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                return response.text().then(text => {
-                    throw new Error(`Resposta não é JSON: ${text.substring(0, 50)}...`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Dados brutos recebidos:', data);
-            hideLoading();
-            if (!data || !data.users || data.users.length === 0) {
-                console.warn('Nenhum usuário encontrado ou dados inválidos:', data);
-                tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário ativo encontrado.</td></tr>';
+        fetch('https://site-moneybet.onrender.com/users', { credentials: 'include', mode: 'cors' })
+            .then(response => {
+                console.log('Resposta do servidor para Usuários Ativos:', { status: response.status, statusText: response.statusText });
+                if (!response.ok) throw new Error(`Erro: ${response.status} - ${response.statusText}`);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Dados recebidos:', data);
+                hideLoading();
+                if (!data || !data.users || data.users.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário ativo encontrado.</td></tr>';
+                    updateDashboardStats(data);
+                    return;
+                }
+                allUsers = data.users;
+                const activeUsers = data.users.filter(user => user.paymentHistory?.length && user.expirationDate);
+                tableBody.innerHTML = activeUsers.length ? '' : '<tr><td colspan="9">Nenhum usuário ativo encontrado.</td></tr>';
+                if (activeUsers.length) populateUserTable(activeUsers);
                 updateDashboardStats(data);
-                return;
-            }
-            allUsers = data.users;
-            const activeUsers = data.users.filter(user => {
-                const hasPaymentHistory = user.paymentHistory && user.paymentHistory.length > 0;
-                const hasExpiration = user.expirationDate;
-                return hasPaymentHistory && hasExpiration;
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Erro ao carregar Usuários Ativos:', error);
+                tableBody.innerHTML = `<tr><td colspan="9">Erro: ${error.message}</td></tr>`;
+                updateDashboardStats([]);
+                showError(error.message);
             });
-            if (activeUsers.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="9">Nenhum usuário ativo encontrado.</td></tr>';
-            } else {
-                populateUserTable(activeUsers);
-            }
-            updateDashboardStats(data);
-            console.log('Usuários ativos carregados:', activeUsers);
-        })
-        .catch(error => {
-            hideLoading();
-            console.error('Erro ao carregar Usuários Ativos:', error);
-            tableBody.innerHTML = `<tr><td colspan="9">Erro: ${error.message}</td></tr>`;
-            updateDashboardStats([]);
-            showError(`Erro ao carregar usuários ativos: ${error.message}`);
-            alert(`Erro ao carregar usuários ativos: ${error.message}`);
-        });
     }
 
     function updateDashboardStats(data) {
         const users = data.users || [];
         const totalUsers = users.length;
-        let totalBalance = 0;
-        users.forEach(user => {
-            const paymentHistory = user.paymentHistory || [];
-            totalBalance += paymentHistory.reduce((total, payment) => total + (parseFloat(payment.amount) || 0), 0);
-        });
+        const totalBalance = users.reduce((sum, user) => sum + (user.paymentHistory || []).reduce((total, p) => total + (parseFloat(p.amount) || 0), 0), 0);
         const currentDate = new Date();
-        const activeSubscriptions = users.filter(user => {
-            if (!user.expirationDate) return false;
-            const expiration = new Date(user.expirationDate);
-            return !isNaN(expiration.getTime()) && expiration > currentDate;
-        }).length;
-        const expiredSubscriptions = users.filter(user => {
-            if (!user.expirationDate) return false;
-            const expiration = new Date(user.expirationDate);
-            return !isNaN(expiration.getTime()) && expiration <= currentDate;
-        }).length;
+        const activeSubscriptions = users.filter(user => user.expirationDate && new Date(user.expirationDate) > currentDate).length;
+        const expiredSubscriptions = users.filter(user => user.expirationDate && new Date(user.expirationDate) <= currentDate).length;
 
         totalUsersEl.textContent = totalUsers || '0';
         totalBalanceEl.textContent = totalBalance.toFixed(2) || '0.00';
@@ -345,25 +226,15 @@ function initializeApp() {
             const balanceValue = 0;
             const registeredAt = user.registeredAt ? new Date(user.registeredAt) : null;
             const expirationDate = user.expirationDate ? new Date(user.expirationDate) : null;
-            const formatDate = (date) => {
-                if (!date || isNaN(date.getTime())) return '-';
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = String(date.getFullYear()).slice(-2);
-                return `${day}/${month}/${year}`;
-            };
+            const formatDate = (date) => (!date || isNaN(date.getTime())) ? '-' : `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getFullYear()).slice(-2)}`;
             const registeredValue = registeredAt ? formatDate(registeredAt) : '-';
             const expirationValue = expirationDate ? formatDate(expirationDate) : '-';
             const daysRemaining = calculateDaysRemaining(user.expirationDate);
-            const decodedUserId = decodeURIComponent(user.userId || '-');
-            const decodedName = decodeURIComponent(user.name || '-');
             const isIndicated = user.indication === 'Soneca';
-            const paymentText = Array.isArray(user.paymentHistory) && user.paymentHistory.length > 0 
-                ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${formatDate(new Date(p.timestamp))})`).join('<br>') 
-                : '-';
+            const paymentText = (user.paymentHistory || []).length ? user.paymentHistory.map(p => `R$ ${(p.amount || 0).toFixed(2)} (${formatDate(new Date(p.timestamp))})`).join('<br>') : '-';
             row.innerHTML = `
-                <td>${decodedUserId}</td>
-                <td>${decodedName}</td>
+                <td>${user.userId || '-'}</td>
+                <td>${user.name || '-'}</td>
                 <td>${user.whatsapp || '-'}</td>
                 <td title="${registeredAt ? registeredAt.toLocaleDateString('pt-BR') : '-'}">${registeredValue}</td>
                 <td title="${paymentText}">${paymentText}</td>
@@ -375,23 +246,15 @@ function initializeApp() {
                     <button class="action-btn delete-btn" onclick="openCancelModal('${encodeURIComponent(user.userId || '')}', '${encodeURIComponent(user.name || '')}')"><i class="fas fa-trash-alt"></i> Excluir</button>
                 </td>
             `;
-            if (isIndicated) {
-                row.classList.add('indicated-user');
-                console.log(`Usuário ${decodedUserId} marcado como indicado com classe 'indicated-user', indication:`, user.indication);
-            } else {
-                console.log(`Usuário ${decodedUserId} não indicado, indication:`, user.indication);
-            }
+            if (isIndicated) row.classList.add('indicated-user');
             tableBody.appendChild(row);
         });
-        console.log('Tabela de usuários populada com', users.length, 'entradas');
+        console.log('Tabela populada com', users.length, 'entradas');
     }
 
     function filterUsers() {
         const query = searchInput.value.toLowerCase();
-        const filteredUsers = allUsers.filter(user => 
-            (user.userId && user.userId.toLowerCase().includes(query)) ||
-            (user.name && user.name.toLowerCase().includes(query))
-        );
+        const filteredUsers = allUsers.filter(user => (user.userId && user.userId.toLowerCase().includes(query)) || (user.name && user.name.toLowerCase().includes(query)));
         populateUserTable(filteredUsers);
         console.log('Usuários filtrados:', filteredUsers.length);
     }
@@ -400,13 +263,8 @@ function initializeApp() {
 
     editExpirationInput.addEventListener('change', () => {
         const selectedDate = new Date(editExpirationInput.value);
-        if (selectedDate && !isNaN(selectedDate.getTime())) {
-            updateDaysRemaining(selectedDate);
-            console.log('Data de expiração alterada para:', editExpirationInput.value);
-        } else {
-            editDaysRemainingInput.value = '0 dias';
-            console.log('Data de expiração inválida, resetada para 0 dias');
-        }
+        editDaysRemainingInput.value = selectedDate && !isNaN(selectedDate.getTime()) ? updateDaysRemaining(selectedDate) : '0 dias';
+        console.log('Data de expiração alterada para:', editExpirationInput.value);
     });
 
     const saveBtn = document.querySelector('.save-btn');
@@ -414,33 +272,20 @@ function initializeApp() {
         saveBtn.addEventListener('click', () => {
             const name = editNameInput.value.trim();
             const balance = 0;
-            let expirationDate = null;
+            const expirationDate = editExpirationInput.value ? new Date(editExpirationInput.value).toISOString() : null;
             const indication = editIndicationInput.value;
-
-            if (editExpirationInput.value) {
-                try {
-                    const parsedDate = new Date(editExpirationInput.value);
-                    if (isNaN(parsedDate.getTime())) {
-                        console.warn('Data de expiração inválida ao salvar:', editExpirationInput.value);
-                        alert('Erro: Data de expiração inválida.');
-                        return;
-                    }
-                    expirationDate = parsedDate.toISOString();
-                    console.log('Data de expiração formatada:', expirationDate);
-                } catch (err) {
-                    console.error('Erro ao parsear data de expiração ao salvar:', err.message);
-                    alert('Erro: Formato de data inválido.');
-                    return;
-                }
-            }
 
             if (!name) {
                 alert('Erro: Nome não pode estar vazio.');
                 return;
             }
+            if (expirationDate && isNaN(new Date(expirationDate).getTime())) {
+                alert('Erro: Data de expiração inválida.');
+                return;
+            }
 
-            const requestBody = { name, balance: 0, expirationDate, indication };
-            console.log('Enviando atualização para o servidor:', { userId: currentUserId, requestBody });
+            const requestBody = { name, balance, expirationDate, indication };
+            console.log('Enviando atualização:', { userId: currentUserId, requestBody });
             fetch(`https://site-moneybet.onrender.com/user/${encodeURIComponent(currentUserId)}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -449,32 +294,21 @@ function initializeApp() {
                 body: JSON.stringify(requestBody)
             })
             .then(response => {
-                console.log('Resposta do servidor ao salvar:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    headers: Object.fromEntries(response.headers.entries())
-                });
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        throw new Error(`Erro: ${response.status} - ${text || response.statusText}`);
-                    });
-                }
+                console.log('Resposta do servidor:', { status: response.status, statusText: response.statusText });
+                if (!response.ok) throw new Error(`Erro: ${response.status} - ${response.statusText}`);
                 return response.json();
             })
             .then(data => {
-                console.log('Dados retornados após salvar:', JSON.stringify(data, null, 2));
-                if (data.error) throw new Error(data.error);
+                console.log('Dados salvos:', data);
                 alert('Sucesso: Dados atualizados!');
                 $('#editModal').modal('hide');
                 loadUsers();
             })
             .catch(error => {
                 console.error('Erro ao salvar:', error);
-                alert(`Erro ao atualizar dados: ${error.message}`);
+                alert(`Erro: ${error.message}`);
             });
         });
-    } else {
-        console.error('Erro: Botão "Salvar Alterações" não encontrado');
     }
 
     $('#editModal, #cancelModal').on('hidden.bs.modal', () => {
@@ -483,105 +317,73 @@ function initializeApp() {
     });
 
     function showLoading() {
-        loadingDiv.style.display = 'block';
-        errorDiv.style.display = 'none';
-        console.log('Exibindo estado de carregamento');
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('error').style.display = 'none';
+        console.log('Exibindo carregamento');
     }
 
     function hideLoading() {
-        loadingDiv.style.display = 'none';
-        console.log('Ocultando estado de carregamento');
+        document.getElementById('loading').style.display = 'none';
+        console.log('Ocultando carregamento');
     }
 
     function showError(message) {
-        errorDiv.textContent = message;
-        errorDiv.style.display = 'block';
+        document.getElementById('error').textContent = message;
+        document.getElementById('error').style.display = 'block';
         console.log('Erro exibido:', message);
     }
 
     function handleLogout() {
         console.log('Logout solicitado');
         localStorage.removeItem('isLoggedIn');
-        console.log('isLoggedIn removido do localStorage');
         window.location.href = '/login.html';
     }
 
     logoutBtn.addEventListener('click', handleLogout);
 
-    // Funções globais para os botões de ação
     function openEditModal(userId, name, balance, expirationDate) {
         console.log('Abrindo modal de edição:', { userId, name, balance, expirationDate });
         if (!editModal || !editIdInput || !editNameInput || !editBalanceInput || !editExpirationInput || !editDaysRemainingInput || !editIndicationInput) {
-            console.error('Erro: Alguns elementos do modal de edição não foram encontrados');
+            console.error('Erro: Elementos do modal não encontrados');
             return;
         }
         currentUserId = decodeURIComponent(userId);
         editIdInput.value = decodeURIComponent(userId) || '-';
         editNameInput.value = decodeURIComponent(name) || '-';
         editBalanceInput.value = (balance || 0).toFixed(2);
-        
         if (expirationDate) {
-            try {
-                const expDate = new Date(expirationDate);
-                if (isNaN(expDate.getTime())) {
-                    console.warn('Data de expiração inválida ao abrir modal:', expirationDate);
-                    editExpirationInput.value = '';
-                    editDaysRemainingInput.value = '0 dias';
-                } else {
-                    editExpirationInput.value = expDate.toISOString().split('T')[0];
-                    updateDaysRemaining(expDate);
-                }
-            } catch (err) {
-                console.error('Erro ao parsear expirationDate no modal:', err.message, { expirationDate });
-                editExpirationInput.value = '';
-                editDaysRemainingInput.value = '0 dias';
-            }
+            const expDate = new Date(expirationDate);
+            editExpirationInput.value = !isNaN(expDate.getTime()) ? expDate.toISOString().split('T')[0] : '';
+            editDaysRemainingInput.value = !isNaN(expDate.getTime()) ? updateDaysRemaining(expDate) : '0 dias';
         } else {
             editExpirationInput.value = '';
             editDaysRemainingInput.value = '0 dias';
         }
-
         editIndicationInput.value = '';
-        console.log('Valor inicial de Indicação:', editIndicationInput.value);
-
         $('#editModal').modal('show');
         console.log('Modal de edição exibido');
     }
 
     function updateDaysRemaining(expirationDate) {
-        if (!editDaysRemainingInput) {
-            console.error('Erro: editDaysRemainingInput não encontrado');
-            return;
-        }
         const currentDate = new Date();
         const diffTime = new Date(expirationDate) - currentDate;
         const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        editDaysRemainingInput.value = daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
-        console.log('Dias restantes calculados:', editDaysRemainingInput.value);
+        return daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
     }
 
     function calculateDaysRemaining(expirationDate) {
         if (!expirationDate) return '0 dias';
-        try {
-            const expDate = new Date(expirationDate);
-            if (isNaN(expDate.getTime())) {
-                console.warn('Data de expiração inválida na tabela:', expirationDate);
-                return '0 dias';
-            }
-            const currentDate = new Date();
-            const diffTime = expDate - currentDate;
-            const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            return daysRemaining > 0 ? `${daysRemaining} dias` : '0 dias';
-        } catch (err) {
-            console.error('Erro ao calcular dias restantes na tabela:', err.message, { expirationDate });
-            return '0 dias';
-        }
+        const expDate = new Date(expirationDate);
+        if (isNaN(expDate.getTime())) return '0 dias';
+        const currentDate = new Date();
+        const diffTime = expDate - currentDate;
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) > 0 ? `${Math.ceil(diffTime / (1000 * 60 * 60 * 24))} dias` : '0 dias';
     }
 
     function openCancelModal(userId, name) {
         console.log('Abrindo modal de cancelamento:', { userId, name });
         if (!cancelModal || !cancelNameDisplay) {
-            console.error('Erro: Elementos do modal de cancelamento não foram encontrados');
+            console.error('Erro: Elementos do modal não encontrados');
             return;
         }
         currentUserId = decodeURIComponent(userId);
@@ -591,11 +393,8 @@ function initializeApp() {
 
         const cancelSubscriptionBtn = document.querySelector('#cancelModal .delete-btn');
         if (cancelSubscriptionBtn) {
-            const newCancelBtn = cancelSubscriptionBtn.cloneNode(true);
-            cancelSubscriptionBtn.parentNode.replaceChild(newCancelBtn, cancelSubscriptionBtn);
-            
-            newCancelBtn.addEventListener('click', () => {
-                console.log('Botão "Cancelar Assinatura" clicado para userId:', currentUserId);
+            cancelSubscriptionBtn.onclick = () => {
+                console.log('Botão Cancelar Assinatura clicado');
                 if (!currentUserId) {
                     console.error('Erro: currentUserId não definido');
                     alert('Erro: ID do usuário não encontrado.');
@@ -608,44 +407,33 @@ function initializeApp() {
                     mode: 'cors'
                 })
                 .then(response => {
-                    console.log('Resposta do servidor ao cancelar assinatura:', { status: response.status, statusText: response.statusText });
-                    if (!response.ok) {
-                        return response.json().then(data => { throw new Error(data.message || `Erro: ${response.status} - ${response.statusText}`); });
-                    }
+                    console.log('Resposta do servidor:', { status: response.status, statusText: response.statusText });
+                    if (!response.ok) throw new Error(`Erro: ${response.status} - ${response.statusText}`);
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Resposta do servidor:', data);
-                    alert('Sucesso: Assinatura cancelada com sucesso!');
+                    console.log('Dados retornados:', data);
+                    alert('Assinatura cancelada com sucesso!');
                     $('#cancelModal').modal('hide');
                     loadUsers();
                 })
                 .catch(error => {
-                    console.error('Erro ao cancelar assinatura:', error.message);
-                    alert(`Erro ao cancelar assinatura: ${error.message}`);
+                    console.error('Erro ao cancelar:', error);
+                    alert(`Erro: ${error.message}`);
                 });
-            });
-            console.log('Evento de clique associado ao botão "Cancelar Assinatura"');
-        } else {
-            console.error('Erro: Botão "Cancelar Assinatura" não encontrado');
+            };
         }
 
         const deleteAllBtn = document.querySelector('#cancelModal .delete-all-btn');
         if (deleteAllBtn) {
-            const newDeleteAllBtn = deleteAllBtn.cloneNode(true);
-            deleteAllBtn.parentNode.replaceChild(newDeleteAllBtn, deleteAllBtn);
-
-            newDeleteAllBtn.addEventListener('click', () => {
-                console.log('Botão "Excluir Todos os Dados" clicado para userId:', currentUserId);
+            deleteAllBtn.onclick = () => {
+                console.log('Botão Excluir Todos os Dados clicado');
                 if (!currentUserId) {
                     console.error('Erro: currentUserId não definido');
                     alert('Erro: ID do usuário não encontrado.');
                     return;
                 }
-                if (!confirm('Tem certeza que deseja excluir TODOS os dados deste usuário? Esta ação não pode ser desfeita.')) {
-                    console.log('Exclusão cancelada pelo usuário');
-                    return;
-                }
+                if (!confirm('Tem certeza? Esta ação é irreversível.')) return;
                 fetch(`https://site-moneybet.onrender.com/user/${encodeURIComponent(currentUserId)}/all`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
@@ -653,28 +441,23 @@ function initializeApp() {
                     mode: 'cors'
                 })
                 .then(response => {
-                    console.log('Resposta do servidor ao excluir todos os dados:', { status: response.status, statusText: response.statusText });
-                    if (!response.ok) {
-                        return response.json().then(data => { throw new Error(data.message || `Erro: ${response.status} - ${response.statusText}`); });
-                    }
+                    console.log('Resposta do servidor:', { status: response.status, statusText: response.statusText });
+                    if (!response.ok) throw new Error(`Erro: ${response.status} - ${response.statusText}`);
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Resposta do servidor:', data);
-                    alert('Sucesso: Todos os dados do usuário foram excluídos com sucesso!');
+                    console.log('Dados retornados:', data);
+                    alert('Dados excluídos com sucesso!');
                     $('#cancelModal').modal('hide');
                     loadUsers();
                 })
                 .catch(error => {
-                    console.error('Erro ao excluir todos os dados:', error.message);
-                    alert(`Erro ao excluir todos os dados: ${error.message}`);
+                    console.error('Erro ao excluir:', error);
+                    alert(`Erro: ${error.message}`);
                 });
-            });
-            console.log('Evento de clique associado ao botão "Excluir Todos os Dados"');
-        } else {
-            console.error('Erro: Botão "Excluir Todos os Dados" não encontrado');
+            };
         }
     }
 
     loadUsers();
-}
+});
