@@ -84,6 +84,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+    // Expondo funções no escopo global
+    window.openEditModal = openEditModal;
+    window.openCancelModal = openCancelModal;
+
     function initializeApp() {
         const tableBody = document.getElementById('usersTableBody');
         const totalUsersEl = document.getElementById('total-users');
@@ -365,7 +369,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(data => {
                     console.log('Dados salvos:', data);
                     alert('Sucesso: Dados atualizados!');
-                    $(editModal).modal('hide');
+                    const modal = bootstrap.Modal.getInstance(editModal); // Usando Bootstrap nativo
+                    modal.hide();
                     loadUsers();
                 })
                 .catch(error => {
@@ -435,7 +440,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 editDaysRemainingInput.value = '0 dias';
             }
             editIndicationInput.value = '';
-            $(editModal).modal('show');
+            const modal = new bootstrap.Modal(editModal); // Usando Bootstrap nativo
+            modal.show();
             console.log('Modal de edição exibido');
         }
 
@@ -463,7 +469,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             currentUserId = decodeURIComponent(userId);
             cancelNameDisplay.textContent = decodeURIComponent(name) || '-';
-            $(cancelModal).modal('show');
+            const modal = new bootstrap.Modal(cancelModal); // Usando Bootstrap nativo
+            modal.show();
             console.log('Modal de cancelamento exibido');
 
             const cancelSubscriptionBtn = document.querySelector('#cancelModal .delete-btn');
@@ -489,7 +496,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     .then(data => {
                         console.log('Dados retornados:', data);
                         alert('Assinatura cancelada com sucesso!');
-                        $(cancelModal).modal('hide');
+                        const modal = bootstrap.Modal.getInstance(cancelModal);
+                        modal.hide();
                         loadUsers();
                     })
                     .catch(error => {
@@ -524,7 +532,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     .then(data => {
                         console.log('Dados retornados:', data);
                         alert('Dados excluídos com sucesso!');
-                        $(cancelModal).modal('hide');
+                        const modal = bootstrap.Modal.getInstance(cancelModal);
+                        modal.hide();
                         loadUsers();
                     })
                     .catch(error => {
