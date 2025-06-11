@@ -58,9 +58,10 @@ process.on('SIGINT', async () => {
 });
 
 // Rota para a raiz (/) que serve o login.html como página inicial
-app.get('/', (req, res) => {
-    console.log('Rota / acessada');
-    res.sendFile(path.join(__dirname, 'login.html'));
+app.get('/check-auth', (req, res) => {
+    console.log('Rota /check-auth acessada, cookie auth:', req.cookies.auth);
+    const isAuthenticated = req.cookies.auth === 'true';
+    res.json({ isAuthenticated });
 });
 
 // Rota para servir index.html apenas para usuários autenticados

@@ -14,8 +14,12 @@ let currentUserId = null;
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Verificando status de login...');
     fetch('https://site-moneybet.onrender.com/check-auth', { credentials: 'include', mode: 'cors' })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Resposta de /check-auth:', { status: response.status, statusText: response.statusText });
+            return response.json();
+        })
         .then(data => {
+            console.log('Dados de autenticação:', data);
             if (!data.isAuthenticated) {
                 console.log('Usuário não autenticado. Redirecionando para login.html');
                 setTimeout(() => window.location.href = '/login.html', 1000);
@@ -310,13 +314,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(data => {
                     console.log('Dados salvos:', data);
                     alert('Sucesso: Dados atualizados!');
-                    $(editModal).modal('hide'); // Ajuste para usar o elemento
-                    loadUsers(); // Recarrega a tabela
+                    $(editModal).modal('hide');
+                    loadUsers();
                 })
                 .catch(error => {
                     console.error('Erro ao salvar:', error);
                     alert(`Erro: ${error.message}`);
-                    loadUsers(); // Recarrega após erro
+                    loadUsers();
                 });
             });
         }
@@ -349,13 +353,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        localStorage.removeItem('isLoggedIn'); // Opcional, para compatibilidade
+                        localStorage.removeItem('isLoggedIn');
                         window.location.href = '/login.html';
                     }
                 })
                 .catch(error => {
                     console.error('Erro ao fazer logout:', error);
-                    window.location.href = '/login.html'; // Fallback
+                    window.location.href = '/login.html';
                 });
         }
 
@@ -380,7 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 editDaysRemainingInput.value = '0 dias';
             }
             editIndicationInput.value = '';
-            $(editModal).modal('show'); // Ajuste para usar o elemento
+            $(editModal).modal('show');
             console.log('Modal de edição exibido');
         }
 
@@ -408,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             currentUserId = decodeURIComponent(userId);
             cancelNameDisplay.textContent = decodeURIComponent(name) || '-';
-            $(cancelModal).modal('show'); // Ajuste para usar o elemento
+            $(cancelModal).modal('show');
             console.log('Modal de cancelamento exibido');
 
             const cancelSubscriptionBtn = document.querySelector('#cancelModal .delete-btn');
@@ -434,13 +438,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     .then(data => {
                         console.log('Dados retornados:', data);
                         alert('Assinatura cancelada com sucesso!');
-                        $(cancelModal).modal('hide'); // Ajuste para usar o elemento
+                        $(cancelModal).modal('hide');
                         loadUsers();
                     })
                     .catch(error => {
                         console.error('Erro ao cancelar:', error);
                         alert(`Erro: ${error.message}`);
-                        loadUsers(); // Recarrega após erro
+                        loadUsers();
                     });
                 };
             }
@@ -469,13 +473,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     .then(data => {
                         console.log('Dados retornados:', data);
                         alert('Dados excluídos com sucesso!');
-                        $(cancelModal).modal('hide'); // Ajuste para usar o elemento
+                        $(cancelModal).modal('hide');
                         loadUsers();
                     })
                     .catch(error => {
                         console.error('Erro ao excluir:', error);
                         alert(`Erro: ${error.message}`);
-                        loadUsers(); // Recarrega após erro
+                        loadUsers();
                     });
                 };
             }
