@@ -1,4 +1,3 @@
-// Declaração de elementos DOM globais
 let editModal = null;
 let cancelModal = null;
 let editIdInput = null;
@@ -10,7 +9,6 @@ let editIndicationInput = null;
 let cancelNameDisplay = null;
 let currentUserId = null;
 
-// Verificação de login e timer de redirecionamento
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Verificando status de login...');
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
@@ -19,12 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             console.log('Timer expirado. Redirecionando para login.html');
             window.location.href = '/login.html';
-        }, 1000); // 1 segundo1
+        }, 1000);
     } else {
         console.log('Usuário está logado. Acesso permitido.');
     }
 
-    // Restante do código existente
     const tableBody = document.getElementById('usersTableBody');
     const totalUsersEl = document.getElementById('total-users');
     const totalBalanceEl = document.getElementById('total-balance');
@@ -359,8 +356,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td title="${expirationDate ? expirationDate.toLocaleDateString('pt-BR') : '-'}">${expirationValue}</td>
                 <td>${daysRemaining}</td>
                 <td>
-                    <button class="action-btn edit-btn" onclick="openEditModal('${user.userId || ''}', '${(user.name || '').replace(/'/g, "\\'")}', ${balanceValue}, '${user.expirationDate || ''}')"><i class="fas fa-edit"></i> Editar</button>
-                    <button class="action-btn delete-btn" onclick="openCancelModal('${user.userId || ''}', '${(user.name || '').replace(/'/g, "\\'")}')"><i class="fas fa-trash-alt"></i> Excluir</button>
+                    <button class="action-btn edit-btn" data-user-id="${user.userId || ''}" data-name="${(user.name || '').replace(/'/g, "\\'")}" data-balance="${balanceValue}" data-expiration="${user.expirationDate || ''}"><i class="fas fa-edit"></i> Editar</button>
+                    <button class="action-btn delete-btn" data-user-id="${user.userId || ''}" data-name="${(user.name || '').replace(/'/g, "\\'")}"><i class="fas fa-trash-alt"></i> Excluir</button>
                 </td>
             `;
             if (isIndicated) {
@@ -453,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('Dados retornados após salvar:', JSON.stringify(data, null, 2));
                 if (data.error) throw new Error(data.error);
                 alert('Sucesso: Dados atualizados!');
-                $('#editModal').modal('hide');
+                $(editModal).modal('hide');
                 loadUsers();
             })
             .catch(error => {
@@ -465,9 +462,14 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Erro: Botão "Salvar Alterações" não encontrado');
     }
 
-    $('#editModal, #cancelModal').on('hidden.bs.modal', () => {
+    $(editModal).on('hidden.bs.modal', () => {
         currentUserId = null;
-        console.log('Modal fechado');
+        console.log('Modal de edição fechado');
+    });
+
+    $(cancelModal).on('hidden.bs.modal', () => {
+        currentUserId = null;
+        console.log('Modal de cancelamento fechado');
     });
 
     function showLoading() {
@@ -496,8 +498,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     logoutBtn.addEventListener('click', handleLogout);
 
-    // Funções globais para os botões de ação
-    function openEditModal(userId, name, balance, expirationDate) {
+    tableBody.addEventListener('click', (e) => {
+        const editBtn = e.target.closest('.edit-btn');
+        const deleteBtn = e.target.closest('.delete-btn');
+
+        if (editBtn) {
+            const userId = editBtn.dataset.userId;
+            const name = editBtn.dataset.name.replace(/\\'/g, "'");
+            const balance = parseFloat(editBtn.dataset.balance) || 0;
+            const expirationDate = editBtn.dataset.expiration;
+            window.openEditModal(userId, name, balance, expirationDate);
+        }
+
+        if (deleteBtn) {
+            const userId = deleteBtn.dataset.userId;
+            const name = deleteBtn.dataset.name.replace(/\\'/g, "'");
+            window.openCancelModal(userId, name);
+        }
+    });
+
+    window.openEditModal = function(userId, name, balance, expirationDate) {
         console.log('Abrindo modal de edição:', { userId, name, balance, expirationDate });
         if (!editModal || !editIdInput || !editNameInput || !editBalanceInput || !editExpirationInput || !editDaysRemainingInput || !editIndicationInput) {
             console.error('Erro: Alguns elementos do modal de edição não foram encontrados');
@@ -506,7 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentUserId = userId;
         editIdInput.value = userId || '-';
         editNameInput.value = name || '-';
-        editBalanceInput.value = (0).toFixed(2);
+        editBalanceInput.value = balance.toFixed(2);
         
         if (expirationDate) {
             try {
@@ -532,9 +552,9 @@ document.addEventListener('DOMContentLoaded', () => {
         editIndicationInput.value = '';
         console.log('Valor inicial de Indicação:', editIndicationInput.value);
 
-        $('#editModal').modal('show');
+        $(editModal).modal('show');
         console.log('Modal de edição exibido');
-    }
+    };
 
     function updateDaysRemaining(expirationDate) {
         if (!editDaysRemainingInput) {
@@ -566,7 +586,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function openCancelModal(userId, name) {
+    window.openCancelModal = function(userId, name) {
         console.log('Abrindo modal de cancelamento:', { userId, name });
         if (!cancelModal || !cancelNameDisplay) {
             console.error('Erro: Elementos do modal de cancelamento não foram encontrados');
@@ -574,7 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         currentUserId = userId;
         cancelNameDisplay.textContent = name || '-';
-        $('#cancelModal').modal('show');
+        $(cancelModal).modal('show');
         console.log('Modal de cancelamento exibido');
 
         const cancelSubscriptionBtn = document.querySelector('#cancelModal .delete-btn');
@@ -605,7 +625,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(data => {
                     console.log('Resposta do servidor:', data);
                     alert('Sucesso: Assinatura cancelada com sucesso!');
-                    $('#cancelModal').modal('hide');
+                    $(cancelModal).modal('hide');
                     loadUsers();
                 })
                 .catch(error => {
@@ -650,7 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(data => {
                     console.log('Resposta do servidor:', data);
                     alert('Sucesso: Todos os dados do usuário foram excluídos com sucesso!');
-                    $('#cancelModal').modal('hide');
+                    $(cancelModal).modal('hide');
                     loadUsers();
                 })
                 .catch(error => {
