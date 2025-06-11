@@ -356,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td title="${expirationDate ? expirationDate.toLocaleDateString('pt-BR') : '-'}">${expirationValue}</td>
                 <td>${daysRemaining}</td>
                 <td>
-                    <button class="action-btn edit-btn" data-user-id="${user.userId || ''}" data-name="${(user.name || '').replace(/'/g, "\\'")}" data-balance="${balanceValue}" data-expiration="${user.expirationDate || ''}" data-indication="${user.indication || ''}"><i class="fas fa-edit"></i> Editar</button>
+                    <button class="action-btn edit-btn" data-user-id="${user.userId || ''}" data-name="${(user.name || '').replace(/'/g, "\\'")}" data-balance="${balanceValue}" data-expiration="${user.expirationDate || ''}"><i class="fas fa-edit"></i> Editar</button>
                     <button class="action-btn delete-btn" data-user-id="${user.userId || ''}" data-name="${(user.name || '').replace(/'/g, "\\'")}"><i class="fas fa-trash-alt"></i> Excluir</button>
                 </td>
             `;
@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = editNameInput.value.trim();
             const balance = 0;
             let expirationDate = null;
-            const indication = editIndicationInput.value || '';
+            const indication = editIndicationInput.value;
 
             if (editExpirationInput.value) {
                 try {
@@ -507,8 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = editBtn.dataset.name.replace(/\\'/g, "'");
             const balance = parseFloat(editBtn.dataset.balance) || 0;
             const expirationDate = editBtn.dataset.expiration;
-            const indication = editBtn.dataset.indication || '';
-            window.openEditModal(userId, name, balance, expirationDate, indication);
+            window.openEditModal(userId, name, balance, expirationDate);
         }
 
         if (deleteBtn) {
@@ -518,8 +517,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    window.openEditModal = function(userId, name, balance, expirationDate, indication) {
-        console.log('Abrindo modal de edição:', { userId, name, balance, expirationDate, indication });
+    window.openEditModal = function(userId, name, balance, expirationDate) {
+        console.log('Abrindo modal de edição:', { userId, name, balance, expirationDate });
         if (!editModal || !editIdInput || !editNameInput || !editBalanceInput || !editExpirationInput || !editDaysRemainingInput || !editIndicationInput) {
             console.error('Erro: Alguns elementos do modal de edição não foram encontrados');
             return;
@@ -550,8 +549,8 @@ document.addEventListener('DOMContentLoaded', () => {
             editDaysRemainingInput.value = '0 dias';
         }
 
-        editIndicationInput.value = indication || '';
-        console.log('Valor de Indicação definido:', editIndicationInput.value);
+        editIndicationInput.value = '';
+        console.log('Valor inicial de Indicação:', editIndicationInput.value);
 
         $(editModal).modal('show');
         console.log('Modal de edição exibido');
